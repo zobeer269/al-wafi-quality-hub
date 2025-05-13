@@ -126,7 +126,7 @@ const ChangeControl: React.FC = () => {
               <SelectValue placeholder="All Areas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Areas</SelectItem>
+              <SelectItem value="all">All Areas</SelectItem>
               {changeAreas.map(area => (
                 <SelectItem key={area} value={area}>{area}</SelectItem>
               ))}
@@ -140,7 +140,7 @@ const ChangeControl: React.FC = () => {
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
               <SelectItem value="Under Review">Under Review</SelectItem>
               <SelectItem value="Approved">Approved</SelectItem>

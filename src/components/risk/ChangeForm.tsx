@@ -194,7 +194,7 @@ const ChangeForm = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {risks?.map(risk => (
                             <SelectItem key={risk.id} value={risk.id}>
                               {risk.title} (Score: {risk.risk_score})
