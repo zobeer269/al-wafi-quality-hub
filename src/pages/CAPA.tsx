@@ -12,7 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import CAPAList from '@/components/capa/CAPAList';
 import CAPADetail from '@/components/capa/CAPADetail';
 import CAPAForm from '@/components/capa/CAPAForm';
-import { CAPA, CAPAStatus } from '@/types/document';
+import { CAPA, CAPAStatus, CAPAType } from '@/types/document';
 import { fetchCAPAs, createCAPA, getCAPAStatistics } from '@/services/capaService';
 
 const CAPAPage: React.FC = () => {

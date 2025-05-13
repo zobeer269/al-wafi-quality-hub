@@ -5,7 +5,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusCard from '@/components/dashboard/StatusCard';
 import MetricsChart from '@/components/dashboard/MetricsChart';
-import DocumentList from '@/components/document-control/DocumentList';
+import { DocumentList } from '@/components/document-control/DocumentList';
 import { Document } from '@/types/document';
 
 // Sample data for demo purposes

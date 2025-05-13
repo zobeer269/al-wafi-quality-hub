@@ -1,4 +1,3 @@
-
 import { CAPA } from "@/types/document";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -216,7 +215,7 @@ export const deleteCAPA = async (id: string): Promise<boolean> => {
 };
 
 // Filter CAPAs by status
-export const filterCAPAsByStatus = async (status: string): Promise<CAPA[]> => {
+export const filterCAPAsByStatus = async (status: "Open" | "Investigation" | "In Progress" | "Closed"): Promise<CAPA[]> => {
   try {
     const { data, error } = await supabase
       .from("capas")

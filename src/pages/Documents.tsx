@@ -4,7 +4,7 @@ import { FileText, Filter, Plus, Search } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
-import DocumentList from '@/components/document-control/DocumentList';
+import { DocumentList } from '@/components/document-control/DocumentList';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Document } from '@/types/document';
 import { fetchDocuments } from '@/services/documentService';

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CAPA, CAPAStatus } from '@/types/document';
-import { Clock, Download, FileText, User, Edit, Check } from 'lucide-react';
+import { Clock, Download, FileText, User, Edit, Check, Save } from 'lucide-react';
 import { updateCAPA } from '@/services/capaService';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
