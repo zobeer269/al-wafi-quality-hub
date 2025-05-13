@@ -1,0 +1,63 @@
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+interface PageHeaderProps {
+  title: string;
+  description?: string;
+  primaryAction?: {
+    label: string;
+    onClick: () => void;
+    icon?: React.ReactNode;
+  };
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+    icon?: React.ReactNode;
+  };
+  className?: string;
+}
+
+const PageHeader: React.FC<PageHeaderProps> = ({
+  title,
+  description,
+  primaryAction,
+  secondaryAction,
+  className,
+}) => {
+  return (
+    <div className={cn('mb-8', className)}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+          {description && <p className="mt-2 text-sm text-gray-600">{description}</p>}
+        </div>
+        <div className="flex items-center space-x-3">
+          {secondaryAction && (
+            <Button
+              variant="outline"
+              onClick={secondaryAction.onClick}
+              className="flex items-center gap-2"
+            >
+              {secondaryAction.icon}
+              {secondaryAction.label}
+            </Button>
+          )}
+          {primaryAction && (
+            <Button
+              variant="default"
+              onClick={primaryAction.onClick}
+              className="flex items-center gap-2"
+            >
+              {primaryAction.icon}
+              {primaryAction.label}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PageHeader;
