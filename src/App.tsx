@@ -1,5 +1,5 @@
 
-import { Toaster } from "@/components/ui/Toaster"; // Correct casing
+import { Toaster } from "@/components/ui/toaster"; // Lowercase casing
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
