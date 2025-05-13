@@ -9,16 +9,233 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      capas: {
+        Row: {
+          action_plan: string | null
+          assigned_to: string | null
+          capa_type: Database["public"]["Enums"]["capa_type"]
+          closed_date: string | null
+          created_at: string | null
+          created_by: string
+          description: string
+          due_date: string | null
+          effectiveness_check_required: boolean | null
+          effectiveness_verified: boolean | null
+          id: string
+          number: string
+          priority: number
+          root_cause: string | null
+          status: Database["public"]["Enums"]["capa_status"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          action_plan?: string | null
+          assigned_to?: string | null
+          capa_type: Database["public"]["Enums"]["capa_type"]
+          closed_date?: string | null
+          created_at?: string | null
+          created_by: string
+          description: string
+          due_date?: string | null
+          effectiveness_check_required?: boolean | null
+          effectiveness_verified?: boolean | null
+          id?: string
+          number: string
+          priority?: number
+          root_cause?: string | null
+          status?: Database["public"]["Enums"]["capa_status"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          action_plan?: string | null
+          assigned_to?: string | null
+          capa_type?: Database["public"]["Enums"]["capa_type"]
+          closed_date?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string
+          due_date?: string | null
+          effectiveness_check_required?: boolean | null
+          effectiveness_verified?: boolean | null
+          id?: string
+          number?: string
+          priority?: number
+          root_cause?: string | null
+          status?: Database["public"]["Enums"]["capa_status"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      document_history: {
+        Row: {
+          content_url: string | null
+          created_at: string | null
+          document_id: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["document_status"]
+          updated_by: string
+          version: string
+        }
+        Insert: {
+          content_url?: string | null
+          created_at?: string | null
+          document_id: string
+          id?: string
+          notes?: string | null
+          status: Database["public"]["Enums"]["document_status"]
+          updated_by: string
+          version: string
+        }
+        Update: {
+          content_url?: string | null
+          created_at?: string | null
+          document_id?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          updated_by?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_history_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          approved_by: string | null
+          content_url: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          document_type: string
+          effective_date: string | null
+          expiry_date: string | null
+          id: string
+          number: string
+          review_date: string | null
+          status: Database["public"]["Enums"]["document_status"]
+          title: string
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          approved_by?: string | null
+          content_url?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          document_type: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          id?: string
+          number: string
+          review_date?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          title: string
+          updated_at?: string | null
+          version: string
+        }
+        Update: {
+          approved_by?: string | null
+          content_url?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          document_type?: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          id?: string
+          number?: string
+          review_date?: string | null
+          status?: Database["public"]["Enums"]["document_status"]
+          title?: string
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          department: string | null
+          first_name: string | null
+          id: string
+          job_title: string | null
+          last_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          first_name?: string | null
+          id: string
+          job_title?: string | null
+          last_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          first_name?: string | null
+          id?: string
+          job_title?: string | null
+          last_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          requested_user_id: string
+          requested_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      capa_status: "Open" | "Investigation" | "In Progress" | "Closed"
+      capa_type: "Corrective" | "Preventive" | "Both"
+      document_status: "Draft" | "In Review" | "Approved" | "Obsolete"
+      user_role: "admin" | "manager" | "supervisor" | "user" | "readonly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +350,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      capa_status: ["Open", "Investigation", "In Progress", "Closed"],
+      capa_type: ["Corrective", "Preventive", "Both"],
+      document_status: ["Draft", "In Review", "Approved", "Obsolete"],
+      user_role: ["admin", "manager", "supervisor", "user", "readonly"],
+    },
   },
 } as const

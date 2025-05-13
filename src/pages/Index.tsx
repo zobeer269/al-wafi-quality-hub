@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AlertTriangle, ClipboardCheck, FilePlus, FileText, Shield, Users } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
@@ -14,7 +13,7 @@ const documentData = [
   { id: '3', number: 'QP-FRM-010', title: 'Supplier Qualification Form', type: 'Form', version: '1.0', status: 'Draft', lastUpdated: '2024-05-01' },
   { id: '4', number: 'QP-POL-001', title: 'Quality Policy', type: 'Policy', version: '2.1', status: 'Approved', lastUpdated: '2023-12-10' },
   { id: '5', number: 'QP-MAN-001', title: 'Quality Manual', type: 'Manual', version: '3.0', status: 'Approved', lastUpdated: '2024-01-05' },
-] as const;
+];
 
 const capaStatusData = [
   { name: 'Open', value: 12 },
