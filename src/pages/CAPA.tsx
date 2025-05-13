@@ -8,16 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { CAPA, CAPAStatus } from '@/types/document';
+import { CAPAStatus, CAPAType } from '@/types/document';
 
 // Sample data
-const capaData: CAPA[] = [
+const capaData = [
   {
     id: "1",
     number: "CAPA-2023-001",
     title: "Equipment Calibration Failure",
-    type: "Corrective",
-    status: "Open",
+    type: "Corrective" as CAPAType,
+    status: "Open" as CAPAStatus,
     priority: 3,
     createdDate: "2023-12-15",
     dueDate: "2024-01-15",
@@ -28,8 +28,8 @@ const capaData: CAPA[] = [
     id: "2",
     number: "CAPA-2023-002",
     title: "Supplier Material Nonconformance",
-    type: "Corrective",
-    status: "In Progress",
+    type: "Corrective" as CAPAType,
+    status: "In Progress" as CAPAStatus,
     priority: 2,
     createdDate: "2023-12-20",
     dueDate: "2024-01-20",
@@ -40,8 +40,8 @@ const capaData: CAPA[] = [
     id: "3",
     number: "CAPA-2024-001",
     title: "Documentation Process Improvement",
-    type: "Preventive",
-    status: "Open",
+    type: "Preventive" as CAPAType,
+    status: "Open" as CAPAStatus,
     priority: 1,
     createdDate: "2024-01-05",
     dueDate: "2024-02-15",
@@ -52,8 +52,8 @@ const capaData: CAPA[] = [
     id: "4",
     number: "CAPA-2024-002",
     title: "Training Program Deficiency",
-    type: "Both",
-    status: "Closed",
+    type: "Both" as CAPAType,
+    status: "Closed" as CAPAStatus,
     priority: 2,
     createdDate: "2024-01-10",
     dueDate: "2024-02-10",
@@ -64,8 +64,8 @@ const capaData: CAPA[] = [
     id: "5",
     number: "CAPA-2024-003",
     title: "Process Validation Failure",
-    type: "Corrective",
-    status: "Investigation",
+    type: "Corrective" as CAPAType,
+    status: "Investigation" as CAPAStatus,
     priority: 3,
     createdDate: "2024-02-01",
     dueDate: "2024-03-01",
@@ -102,7 +102,7 @@ const getStatusBadge = (status: CAPAStatus) => {
   }
 };
 
-const CAPA: React.FC = () => {
+const CAPAPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -230,4 +230,4 @@ const CAPA: React.FC = () => {
   );
 };
 
-export default CAPA;
+export default CAPAPage;
