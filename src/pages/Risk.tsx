@@ -226,8 +226,19 @@ const RiskManagement: React.FC = () => {
         <DialogContent className="sm:max-w-lg">
           <RiskForm 
             onSubmit={(data) => {
-              // Add created_by when real auth is implemented
-              createMutation.mutate(data);
+              // We need to ensure that title is provided as it's required
+              const riskData: Omit<Risk, 'id' | 'risk_score'> = {
+                title: data.title,
+                description: data.description,
+                area: data.area,
+                likelihood: data.likelihood,
+                impact: data.impact,
+                mitigation_plan: data.mitigation_plan,
+                responsible: data.responsible,
+                status: data.status
+              };
+              
+              createMutation.mutate(riskData);
             }}
             isLoading={createMutation.isPending}
           />
