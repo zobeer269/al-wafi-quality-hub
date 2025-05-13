@@ -356,6 +356,149 @@ export type Database = {
         }
         Relationships: []
       }
+      training_assignments: {
+        Row: {
+          assigned_by: string
+          assigned_date: string
+          comments: string | null
+          completed_date: string | null
+          due_date: string | null
+          evaluated_by: string | null
+          evaluation_score: number | null
+          id: string
+          status: Database["public"]["Enums"]["training_status"]
+          training_item_id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          assigned_by: string
+          assigned_date?: string
+          comments?: string | null
+          completed_date?: string | null
+          due_date?: string | null
+          evaluated_by?: string | null
+          evaluation_score?: number | null
+          id?: string
+          status?: Database["public"]["Enums"]["training_status"]
+          training_item_id: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          assigned_by?: string
+          assigned_date?: string
+          comments?: string | null
+          completed_date?: string | null
+          due_date?: string | null
+          evaluated_by?: string | null
+          evaluation_score?: number | null
+          id?: string
+          status?: Database["public"]["Enums"]["training_status"]
+          training_item_id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_assignments_training_item_id_fkey"
+            columns: ["training_item_id"]
+            isOneToOne: false
+            referencedRelation: "training_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_items: {
+        Row: {
+          description: string | null
+          document_id: string | null
+          evaluation_required: boolean
+          evaluation_type: string | null
+          frequency: string
+          id: string
+          plan_id: string | null
+          required_by: string | null
+          title: string
+          type: Database["public"]["Enums"]["training_type"]
+        }
+        Insert: {
+          description?: string | null
+          document_id?: string | null
+          evaluation_required?: boolean
+          evaluation_type?: string | null
+          frequency: string
+          id?: string
+          plan_id?: string | null
+          required_by?: string | null
+          title: string
+          type: Database["public"]["Enums"]["training_type"]
+        }
+        Update: {
+          description?: string | null
+          document_id?: string | null
+          evaluation_required?: boolean
+          evaluation_type?: string | null
+          frequency?: string
+          id?: string
+          plan_id?: string | null
+          required_by?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["training_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "training_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_plans: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          department: string
+          description: string | null
+          id: string
+          job_role: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          department: string
+          description?: string | null
+          id?: string
+          job_role: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          department?: string
+          description?: string | null
+          id?: string
+          job_role?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -398,6 +541,19 @@ export type Database = {
       document_status: "Draft" | "In Review" | "Approved" | "Obsolete"
       finding_severity: "Minor" | "Major" | "Critical"
       finding_status: "Open" | "In Progress" | "Closed"
+      training_status:
+        | "Pending"
+        | "In Progress"
+        | "Completed"
+        | "Overdue"
+        | "Waived"
+      training_type:
+        | "SOP"
+        | "Policy"
+        | "Work Instruction"
+        | "External"
+        | "On-the-job"
+        | "Classroom"
       user_role: "admin" | "manager" | "supervisor" | "user" | "readonly"
     }
     CompositeTypes: {
@@ -521,6 +677,21 @@ export const Constants = {
       document_status: ["Draft", "In Review", "Approved", "Obsolete"],
       finding_severity: ["Minor", "Major", "Critical"],
       finding_status: ["Open", "In Progress", "Closed"],
+      training_status: [
+        "Pending",
+        "In Progress",
+        "Completed",
+        "Overdue",
+        "Waived",
+      ],
+      training_type: [
+        "SOP",
+        "Policy",
+        "Work Instruction",
+        "External",
+        "On-the-job",
+        "Classroom",
+      ],
       user_role: ["admin", "manager", "supervisor", "user", "readonly"],
     },
   },

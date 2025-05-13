@@ -1,43 +1,49 @@
 
-export type TrainingStatus = 'Pending' | 'In Progress' | 'Completed' | 'Overdue' | 'Waived';
-export type TrainingType = 'SOP' | 'Policy' | 'Work Instruction' | 'External' | 'On-the-job' | 'Classroom';
+import { Database } from "@/integrations/supabase/types";
 
-export interface TrainingPlan {
+export type TrainingPlan = {
   id: string;
   title: string;
   description?: string;
-  jobRole: string;
+  job_role: string;
   department: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt?: string;
-  status: 'Active' | 'Draft' | 'Archived';
-}
+  status: string;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+};
 
-export interface TrainingItem {
+export type TrainingType = Database["public"]["Enums"]["training_type"];
+export type TrainingStatus = Database["public"]["Enums"]["training_status"];
+
+export type TrainingItem = {
   id: string;
-  planId?: string;
+  plan_id?: string;
   title: string;
-  type: TrainingType;
-  documentId?: string;
-  requiredBy?: string;
-  frequency: 'One-time' | 'Annual' | 'Biannual' | 'Quarterly' | 'Monthly';
   description?: string;
-  evaluationRequired: boolean;
-  evaluationType?: 'Quiz' | 'Practical' | 'Observation' | 'None';
-}
+  type: TrainingType;
+  document_id?: string;
+  required_by?: string;
+  frequency: string;
+  evaluation_required: boolean;
+  evaluation_type?: string;
+};
 
-export interface TrainingAssignment {
+export type TrainingAssignment = {
   id: string;
-  userId: string;
-  userName: string;
-  trainingItemId: string;
+  user_id: string;
+  user_name: string;
+  training_item_id: string;
+  assigned_date: string;
+  due_date?: string;
+  completed_date?: string;
   status: TrainingStatus;
-  assignedDate: string;
-  dueDate?: string;
-  completedDate?: string;
-  assignedBy: string;
-  evaluationScore?: number;
-  evaluatedBy?: string;
+  assigned_by: string;
+  evaluation_score?: number;
+  evaluated_by?: string;
   comments?: string;
-}
+};
+
+export type TrainingAssignmentWithDetails = TrainingAssignment & {
+  training_item?: TrainingItem;
+};
