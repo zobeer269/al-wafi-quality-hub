@@ -228,6 +228,62 @@ export type Database = {
         }
         Relationships: []
       }
+      changes: {
+        Row: {
+          approval_notes: string | null
+          approved_by: string | null
+          change_reason: string | null
+          change_title: string
+          created_at: string | null
+          id: string
+          implementation_date: string | null
+          implementation_plan: string | null
+          linked_area: string | null
+          requested_by: string | null
+          risk_id: string | null
+          status: Database["public"]["Enums"]["change_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          change_reason?: string | null
+          change_title: string
+          created_at?: string | null
+          id?: string
+          implementation_date?: string | null
+          implementation_plan?: string | null
+          linked_area?: string | null
+          requested_by?: string | null
+          risk_id?: string | null
+          status?: Database["public"]["Enums"]["change_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_by?: string | null
+          change_reason?: string | null
+          change_title?: string
+          created_at?: string | null
+          id?: string
+          implementation_date?: string | null
+          implementation_plan?: string | null
+          linked_area?: string | null
+          requested_by?: string | null
+          risk_id?: string | null
+          status?: Database["public"]["Enums"]["change_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "changes_risk_id_fkey"
+            columns: ["risk_id"]
+            isOneToOne: false
+            referencedRelation: "risks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_history: {
         Row: {
           content_url: string | null
@@ -352,6 +408,179 @@ export type Database = {
           id?: string
           job_title?: string | null
           last_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      risks: {
+        Row: {
+          area: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          impact: number | null
+          likelihood: number | null
+          mitigation_plan: string | null
+          responsible: string | null
+          risk_score: number | null
+          status: Database["public"]["Enums"]["risk_status"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impact?: number | null
+          likelihood?: number | null
+          mitigation_plan?: string | null
+          responsible?: string | null
+          risk_score?: number | null
+          status?: Database["public"]["Enums"]["risk_status"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          area?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impact?: number | null
+          likelihood?: number | null
+          mitigation_plan?: string | null
+          responsible?: string | null
+          risk_score?: number | null
+          status?: Database["public"]["Enums"]["risk_status"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      supplier_audits: {
+        Row: {
+          audit_id: string | null
+          created_at: string | null
+          id: string
+          linked_findings: string | null
+          result: string | null
+          supplier_id: string | null
+        }
+        Insert: {
+          audit_id?: string | null
+          created_at?: string | null
+          id?: string
+          linked_findings?: string | null
+          result?: string | null
+          supplier_id?: string | null
+        }
+        Update: {
+          audit_id?: string | null
+          created_at?: string | null
+          id?: string
+          linked_findings?: string | null
+          result?: string | null
+          supplier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_audits_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_audits_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_qualifications: {
+        Row: {
+          certificate_url: string | null
+          id: string
+          next_review_date: string | null
+          notes: string | null
+          qualification_date: string | null
+          qualified_by: string | null
+          supplier_id: string
+        }
+        Insert: {
+          certificate_url?: string | null
+          id?: string
+          next_review_date?: string | null
+          notes?: string | null
+          qualification_date?: string | null
+          qualified_by?: string | null
+          supplier_id: string
+        }
+        Update: {
+          certificate_url?: string | null
+          id?: string
+          next_review_date?: string | null
+          notes?: string | null
+          qualification_date?: string | null
+          qualified_by?: string | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_qualifications_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          approval_date: string | null
+          category: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          requalification_due: string | null
+          status: Database["public"]["Enums"]["supplier_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          approval_date?: string | null
+          category: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          requalification_due?: string | null
+          status?: Database["public"]["Enums"]["supplier_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          approval_date?: string | null
+          category?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          requalification_due?: string | null
+          status?: Database["public"]["Enums"]["supplier_status"]
           updated_at?: string | null
         }
         Relationships: []
@@ -538,9 +767,17 @@ export type Database = {
       audit_type: "Internal" | "External" | "Supplier" | "Regulatory"
       capa_status: "Open" | "Investigation" | "In Progress" | "Closed"
       capa_type: "Corrective" | "Preventive" | "Both"
+      change_status:
+        | "Pending"
+        | "Under Review"
+        | "Approved"
+        | "Rejected"
+        | "Implemented"
       document_status: "Draft" | "In Review" | "Approved" | "Obsolete"
       finding_severity: "Minor" | "Major" | "Critical"
       finding_status: "Open" | "In Progress" | "Closed"
+      risk_status: "Open" | "Mitigated" | "Closed"
+      supplier_status: "Pending" | "Approved" | "Suspended" | "Blacklisted"
       training_status:
         | "Pending"
         | "In Progress"
@@ -674,9 +911,18 @@ export const Constants = {
       audit_type: ["Internal", "External", "Supplier", "Regulatory"],
       capa_status: ["Open", "Investigation", "In Progress", "Closed"],
       capa_type: ["Corrective", "Preventive", "Both"],
+      change_status: [
+        "Pending",
+        "Under Review",
+        "Approved",
+        "Rejected",
+        "Implemented",
+      ],
       document_status: ["Draft", "In Review", "Approved", "Obsolete"],
       finding_severity: ["Minor", "Major", "Critical"],
       finding_status: ["Open", "In Progress", "Closed"],
+      risk_status: ["Open", "Mitigated", "Closed"],
+      supplier_status: ["Pending", "Approved", "Suspended", "Blacklisted"],
       training_status: [
         "Pending",
         "In Progress",
