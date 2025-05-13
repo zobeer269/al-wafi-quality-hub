@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertTriangle, ClipboardCheck, FilePlus, FileText, Shield, Users } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
@@ -5,9 +6,10 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusCard from '@/components/dashboard/StatusCard';
 import MetricsChart from '@/components/dashboard/MetricsChart';
 import DocumentList from '@/components/document-control/DocumentList';
+import { Document } from '@/types/document';
 
 // Sample data for demo purposes
-const documentData = [
+const documentData: Document[] = [
   { id: '1', number: 'QP-SOP-001', title: 'Document Control Procedure', type: 'SOP', version: '1.2', status: 'Approved', lastUpdated: '2024-03-15' },
   { id: '2', number: 'QP-SOP-002', title: 'CAPA Management Procedure', type: 'SOP', version: '2.0', status: 'In Review', lastUpdated: '2024-04-20' },
   { id: '3', number: 'QP-FRM-010', title: 'Supplier Qualification Form', type: 'Form', version: '1.0', status: 'Draft', lastUpdated: '2024-05-01' },

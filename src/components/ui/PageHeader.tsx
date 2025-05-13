@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 interface PageHeaderProps {
   title: string;
   description?: string;
+  icon?: React.ReactNode;
   primaryAction?: {
     label: string;
     onClick: () => void;
@@ -22,6 +23,7 @@ interface PageHeaderProps {
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
+  icon,
   primaryAction,
   secondaryAction,
   className,
@@ -29,9 +31,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <div className={cn('mb-8', className)}>
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          {description && <p className="mt-2 text-sm text-gray-600">{description}</p>}
+        <div className="flex items-center gap-3">
+          {icon && <div className="text-primary">{icon}</div>}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+            {description && <p className="mt-2 text-sm text-gray-600">{description}</p>}
+          </div>
         </div>
         <div className="flex items-center space-x-3">
           {secondaryAction && (

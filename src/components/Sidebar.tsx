@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -94,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false, onToggle }) => {
   const iconClasses = "h-5 w-5";
   
   return (
-    <BaseSidebar defaultCollapsed={isCollapsed} collapsible="offcanvas">
+    <BaseSidebar>
       <SidebarContent>
         <div className="py-4">
           <NavGroup title="Documents" isCollapsed={isCollapsed}>
