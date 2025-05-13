@@ -13,6 +13,7 @@ export interface Document {
   status: DocumentStatus;
   lastUpdated: string;
   description?: string;
+  content_url?: string; // Added this property to fix the build error
 }
 
 export interface CAPA {
@@ -26,4 +27,10 @@ export interface CAPA {
   dueDate?: string;
   assignedTo?: string;
   description: string;
+  root_cause?: string;
+  action_plan?: string;
+  closed_date?: string;
+  effectiveness_check_required?: boolean;
+  effectiveness_verified?: boolean;
+  created_by?: string;
 }

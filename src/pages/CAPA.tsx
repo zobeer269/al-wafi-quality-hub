@@ -1,112 +1,120 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Check, Filter, Plus, Search, X } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { CAPAStatus, CAPAType } from '@/types/document';
-
-// Sample data
-const capaData = [
-  {
-    id: "1",
-    number: "CAPA-2023-001",
-    title: "Equipment Calibration Failure",
-    type: "Corrective" as CAPAType,
-    status: "Open" as CAPAStatus,
-    priority: 3,
-    createdDate: "2023-12-15",
-    dueDate: "2024-01-15",
-    assignedTo: "Sarah Johnson",
-    description: "Calibration failures detected in lab equipment LB-001. Investigation required."
-  },
-  {
-    id: "2",
-    number: "CAPA-2023-002",
-    title: "Supplier Material Nonconformance",
-    type: "Corrective" as CAPAType,
-    status: "In Progress" as CAPAStatus,
-    priority: 2,
-    createdDate: "2023-12-20",
-    dueDate: "2024-01-20",
-    assignedTo: "Michael Chen",
-    description: "Multiple batches of raw materials from Supplier XYZ failed incoming inspection."
-  },
-  {
-    id: "3",
-    number: "CAPA-2024-001",
-    title: "Documentation Process Improvement",
-    type: "Preventive" as CAPAType,
-    status: "Open" as CAPAStatus,
-    priority: 1,
-    createdDate: "2024-01-05",
-    dueDate: "2024-02-15",
-    assignedTo: "Jessica Taylor",
-    description: "Implement improved document control process to prevent recurrence of documentation errors."
-  },
-  {
-    id: "4",
-    number: "CAPA-2024-002",
-    title: "Training Program Deficiency",
-    type: "Both" as CAPAType,
-    status: "Closed" as CAPAStatus,
-    priority: 2,
-    createdDate: "2024-01-10",
-    dueDate: "2024-02-10",
-    assignedTo: "Robert Garcia",
-    description: "Address gaps in operator training program identified during internal audit."
-  },
-  {
-    id: "5",
-    number: "CAPA-2024-003",
-    title: "Process Validation Failure",
-    type: "Corrective" as CAPAType,
-    status: "Investigation" as CAPAStatus,
-    priority: 3,
-    createdDate: "2024-02-01",
-    dueDate: "2024-03-01",
-    assignedTo: "David Kim",
-    description: "Process validation for manufacturing line 2 failed acceptance criteria. Root cause analysis needed."
-  }
-];
-
-const getPriorityBadge = (priority: number) => {
-  switch(priority) {
-    case 3:
-      return <Badge variant="destructive">High</Badge>;
-    case 2:
-      return <Badge variant="default">Medium</Badge>;
-    case 1:
-      return <Badge variant="outline">Low</Badge>;
-    default:
-      return <Badge variant="outline">Low</Badge>;
-  }
-};
-
-const getStatusBadge = (status: CAPAStatus) => {
-  switch(status) {
-    case "Open":
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Open</Badge>;
-    case "In Progress":
-      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">In Progress</Badge>;
-    case "Investigation":
-      return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Investigation</Badge>;
-    case "Closed":
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Closed</Badge>;
-    default:
-      return <Badge variant="outline">Unknown</Badge>;
-  }
-};
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { toast } from '@/hooks/use-toast';
+import CAPAList from '@/components/capa/CAPAList';
+import CAPADetail from '@/components/capa/CAPADetail';
+import CAPAForm from '@/components/capa/CAPAForm';
+import { CAPA, CAPAStatus } from '@/types/document';
+import { fetchCAPAs, createCAPA, getCAPAStatistics } from '@/services/capaService';
 
 const CAPAPage: React.FC = () => {
-  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [capas, setCapas] = useState<CAPA[]>([]);
+  const [selectedCAPA, setSelectedCAPA] = useState<CAPA | null>(null);
+  const [filterStatus, setFilterStatus] = useState<CAPAStatus | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredCapas = capaData.filter(capa => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [statistics, setStatistics] = useState({
+    high: 0,
+    medium: 0,
+    low: 0,
+    closed: 0
+  });
+  const [activeTab, setActiveTab] = useState<string>('all');
+
+  useEffect(() => {
+    loadCAPAs();
+    loadStatistics();
+  }, []);
+
+  const loadCAPAs = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchCAPAs();
+      setCapas(data);
+    } catch (error) {
+      console.error("Error loading CAPAs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load CAPAs. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadStatistics = async () => {
+    try {
+      const stats = await getCAPAStatistics();
+      setStatistics(stats);
+    } catch (error) {
+      console.error("Error loading CAPA statistics:", error);
+    }
+  };
+
+  const handleCreateCAPA = async (formData: any) => {
+    setIsLoading(true);
+    try {
+      // Mock user ID for now - replace with actual authentication
+      const userId = "system";
+      
+      const capaData = {
+        number: formData.number,
+        title: formData.title,
+        type: formData.type as CAPAType,
+        priority: parseInt(formData.priority, 10),
+        description: formData.description,
+        assignedTo: formData.assignedTo || undefined,
+        dueDate: formData.dueDate || undefined,
+        status: "Open" as CAPAStatus
+      };
+      
+      await createCAPA(capaData, userId);
+      setShowForm(false);
+      loadCAPAs();
+      loadStatistics();
+      
+      toast({
+        title: "Success",
+        description: "CAPA created successfully",
+      });
+    } catch (error) {
+      console.error("Error creating CAPA:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create CAPA. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === 'all') {
+      setFilterStatus(null);
+    } else if (value === 'open') {
+      setFilterStatus('Open');
+    } else if (value === 'investigation') {
+      setFilterStatus('Investigation');
+    } else if (value === 'inProgress') {
+      setFilterStatus('In Progress');
+    } else if (value === 'closed') {
+      setFilterStatus('Closed');
+    }
+  };
+
+  const filteredCAPAs = capas.filter(capa => {
     const matchesStatus = filterStatus ? capa.status === filterStatus : true;
     const matchesSearch = searchTerm 
       ? capa.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -132,19 +140,19 @@ const CAPAPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-red-50 p-4 rounded-lg border border-red-100">
               <div className="text-sm text-red-600 font-medium">High Priority</div>
-              <div className="text-2xl font-bold">4</div>
+              <div className="text-2xl font-bold">{statistics.high}</div>
             </div>
             <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
               <div className="text-sm text-amber-600 font-medium">Medium Priority</div>
-              <div className="text-2xl font-bold">8</div>
+              <div className="text-2xl font-bold">{statistics.medium}</div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
               <div className="text-sm text-blue-600 font-medium">Low Priority</div>
-              <div className="text-2xl font-bold">5</div>
+              <div className="text-2xl font-bold">{statistics.low}</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border border-green-100">
               <div className="text-sm text-green-600 font-medium">Closed (Last 30 Days)</div>
-              <div className="text-2xl font-bold">12</div>
+              <div className="text-2xl font-bold">{statistics.closed}</div>
             </div>
           </div>
         </CardContent>
@@ -171,7 +179,7 @@ const CAPAPage: React.FC = () => {
               {filterStatus} <X className="ml-1 h-4 w-4" />
             </Button>
           )}
-          <Button className="w-full md:w-auto">
+          <Button className="w-full md:w-auto" onClick={() => setShowForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New CAPA
           </Button>
@@ -179,53 +187,85 @@ const CAPAPage: React.FC = () => {
       </div>
 
       <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCapas.map((capa) => (
-              <TableRow key={capa.id}>
-                <TableCell className="font-medium">{capa.number}</TableCell>
-                <TableCell>{capa.title}</TableCell>
-                <TableCell>{capa.type}</TableCell>
-                <TableCell>{getPriorityBadge(capa.priority)}</TableCell>
-                <TableCell>
-                  <div className="cursor-pointer" onClick={() => setFilterStatus(capa.status)}>
-                    {getStatusBadge(capa.status)}
-                  </div>
-                </TableCell>
-                <TableCell>{capa.createdDate}</TableCell>
-                <TableCell>{capa.dueDate || '-'}</TableCell>
-                <TableCell>{capa.assignedTo}</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open</span>
-                    <Check className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {filteredCapas.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
-                  No matching CAPAs found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue="all">
+          <div className="px-4 pt-4">
+            <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="open">Open</TabsTrigger>
+              <TabsTrigger value="investigation">Investigation</TabsTrigger>
+              <TabsTrigger value="inProgress">In Progress</TabsTrigger>
+              <TabsTrigger value="closed">Closed</TabsTrigger>
+            </TabsList>
+          </div>
+          
+          <TabsContent value="all" className="mt-0 px-0">
+            <CAPAList 
+              capas={filteredCAPAs} 
+              onSelectCAPA={setSelectedCAPA}
+              onFilterStatus={setFilterStatus}
+            />
+          </TabsContent>
+          
+          <TabsContent value="open" className="mt-0 px-0">
+            <CAPAList 
+              capas={filteredCAPAs} 
+              onSelectCAPA={setSelectedCAPA}
+            />
+          </TabsContent>
+          
+          <TabsContent value="investigation" className="mt-0 px-0">
+            <CAPAList 
+              capas={filteredCAPAs} 
+              onSelectCAPA={setSelectedCAPA}
+            />
+          </TabsContent>
+          
+          <TabsContent value="inProgress" className="mt-0 px-0">
+            <CAPAList 
+              capas={filteredCAPAs} 
+              onSelectCAPA={setSelectedCAPA}
+            />
+          </TabsContent>
+          
+          <TabsContent value="closed" className="mt-0 px-0">
+            <CAPAList 
+              capas={filteredCAPAs} 
+              onSelectCAPA={setSelectedCAPA}
+            />
+          </TabsContent>
+        </Tabs>
       </Card>
+
+      {/* CAPA Detail Dialog */}
+      <Dialog open={!!selectedCAPA} onOpenChange={(open) => !open && setSelectedCAPA(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedCAPA && (
+            <CAPADetail 
+              capa={selectedCAPA} 
+              onClose={() => setSelectedCAPA(null)}
+              onStatusChange={() => {
+                loadCAPAs();
+                loadStatistics();
+                setSelectedCAPA(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create CAPA Dialog */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New CAPA</DialogTitle>
+          </DialogHeader>
+          <CAPAForm 
+            onSubmit={handleCreateCAPA}
+            onCancel={() => setShowForm(false)}
+            isLoading={isLoading}
+          />
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
