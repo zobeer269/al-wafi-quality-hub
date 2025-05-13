@@ -9,6 +9,165 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_evidence: {
+        Row: {
+          audit_id: string
+          description: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          finding_id: string | null
+          id: string
+          uploaded_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          audit_id: string
+          description?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          finding_id?: string | null
+          id?: string
+          uploaded_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          audit_id?: string
+          description?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          finding_id?: string | null
+          id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_evidence_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_evidence_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "audit_findings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_findings: {
+        Row: {
+          assigned_to: string | null
+          audit_id: string
+          capa_required: boolean | null
+          created_at: string | null
+          description: string
+          due_date: string | null
+          finding_number: string
+          id: string
+          linked_capa_id: string | null
+          severity: Database["public"]["Enums"]["finding_severity"]
+          status: Database["public"]["Enums"]["finding_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          audit_id: string
+          capa_required?: boolean | null
+          created_at?: string | null
+          description: string
+          due_date?: string | null
+          finding_number: string
+          id?: string
+          linked_capa_id?: string | null
+          severity: Database["public"]["Enums"]["finding_severity"]
+          status?: Database["public"]["Enums"]["finding_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          audit_id?: string
+          capa_required?: boolean | null
+          created_at?: string | null
+          description?: string
+          due_date?: string | null
+          finding_number?: string
+          id?: string
+          linked_capa_id?: string | null
+          severity?: Database["public"]["Enums"]["finding_severity"]
+          status?: Database["public"]["Enums"]["finding_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_findings_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_findings_linked_capa_id_fkey"
+            columns: ["linked_capa_id"]
+            isOneToOne: false
+            referencedRelation: "capas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audits: {
+        Row: {
+          audit_number: string
+          audit_type: Database["public"]["Enums"]["audit_type"]
+          auditor_names: string[] | null
+          created_at: string | null
+          created_by: string
+          department: string | null
+          id: string
+          scheduled_end_date: string | null
+          scheduled_start_date: string | null
+          scope: string
+          status: Database["public"]["Enums"]["audit_status"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          audit_number: string
+          audit_type: Database["public"]["Enums"]["audit_type"]
+          auditor_names?: string[] | null
+          created_at?: string | null
+          created_by: string
+          department?: string | null
+          id?: string
+          scheduled_end_date?: string | null
+          scheduled_start_date?: string | null
+          scope: string
+          status?: Database["public"]["Enums"]["audit_status"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          audit_number?: string
+          audit_type?: Database["public"]["Enums"]["audit_type"]
+          auditor_names?: string[] | null
+          created_at?: string | null
+          created_by?: string
+          department?: string | null
+          id?: string
+          scheduled_end_date?: string | null
+          scheduled_start_date?: string | null
+          scope?: string
+          status?: Database["public"]["Enums"]["audit_status"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       capas: {
         Row: {
           action_plan: string | null
@@ -232,9 +391,13 @@ export type Database = {
       }
     }
     Enums: {
+      audit_status: "Scheduled" | "In Progress" | "Completed" | "Cancelled"
+      audit_type: "Internal" | "External" | "Supplier" | "Regulatory"
       capa_status: "Open" | "Investigation" | "In Progress" | "Closed"
       capa_type: "Corrective" | "Preventive" | "Both"
       document_status: "Draft" | "In Review" | "Approved" | "Obsolete"
+      finding_severity: "Minor" | "Major" | "Critical"
+      finding_status: "Open" | "In Progress" | "Closed"
       user_role: "admin" | "manager" | "supervisor" | "user" | "readonly"
     }
     CompositeTypes: {
@@ -351,9 +514,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      audit_status: ["Scheduled", "In Progress", "Completed", "Cancelled"],
+      audit_type: ["Internal", "External", "Supplier", "Regulatory"],
       capa_status: ["Open", "Investigation", "In Progress", "Closed"],
       capa_type: ["Corrective", "Preventive", "Both"],
       document_status: ["Draft", "In Review", "Approved", "Obsolete"],
+      finding_severity: ["Minor", "Major", "Critical"],
+      finding_status: ["Open", "In Progress", "Closed"],
       user_role: ["admin", "manager", "supervisor", "user", "readonly"],
     },
   },

@@ -1,5 +1,4 @@
-
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/Toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -17,28 +16,30 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/capa" element={<CAPA />} />
-          <Route path="/documents" element={<Documents />} />
-          <Route path="/audits" element={<Audits />} />
-          <Route path="/training" element={<Training />} />
-          <Route path="/suppliers" element={<Suppliers />} />
-          <Route path="/risk" element={<Risk />} />
-          <Route path="/nonconformance" element={<NonConformance />} />
-          <Route path="/change" element={<Change />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/capa" element={<CAPA />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/audits" element={<Audits />} />
+            <Route path="/training" element={<Training />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/risk" element={<Risk />} />
+            <Route path="/nonconformance" element={<NonConformance />} />
+            <Route path="/change" element={<Change />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
