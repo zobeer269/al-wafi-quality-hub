@@ -10,11 +10,11 @@ export const fetchRisks = async (filters?: { status?: string; area?: string }) =
     .select('*')
     .order('risk_score', { ascending: false });
 
-  if (filters?.status) {
+  if (filters?.status && filters.status !== 'all') {
     query = query.eq('status', filters.status as "Open" | "Mitigated" | "Closed");
   }
 
-  if (filters?.area) {
+  if (filters?.area && filters.area !== 'all') {
     query = query.eq('area', filters.area);
   }
 
@@ -119,11 +119,11 @@ export const fetchChanges = async (filters?: { status?: string; linked_area?: st
     `)
     .order('created_at', { ascending: false });
 
-  if (filters?.status) {
+  if (filters?.status && filters.status !== 'all') {
     query = query.eq('status', filters.status as "Pending" | "Under Review" | "Approved" | "Rejected" | "Implemented");
   }
 
-  if (filters?.linked_area) {
+  if (filters?.linked_area && filters.linked_area !== 'all') {
     query = query.eq('linked_area', filters.linked_area);
   }
 

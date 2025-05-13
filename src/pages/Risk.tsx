@@ -126,7 +126,7 @@ const RiskManagement: React.FC = () => {
               <SelectValue placeholder="All Areas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Areas</SelectItem>
+              <SelectItem value="all">All Areas</SelectItem>
               {riskAreas.map(area => (
                 <SelectItem key={area} value={area}>{area}</SelectItem>
               ))}
@@ -140,7 +140,7 @@ const RiskManagement: React.FC = () => {
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Open">Open</SelectItem>
               <SelectItem value="Mitigated">Mitigated</SelectItem>
               <SelectItem value="Closed">Closed</SelectItem>
