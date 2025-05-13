@@ -17,16 +17,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, CheckCircle, AlertCircle } from 'lucide-react';
-import { TrainingAssignment, TrainingStatus } from '@/types/training';
+import { TrainingAssignmentWithDetails, TrainingStatus } from '@/types/training';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-
-interface TrainingAssignmentWithDetails extends TrainingAssignment {
-  training_item: {
-    title: string;
-    type: string;
-  };
-}
 
 type TrainingAssignmentsListProps = {
   assignments: TrainingAssignmentWithDetails[];
@@ -85,8 +78,8 @@ const TrainingAssignmentsList = ({
       <TableBody>
         {assignments.map((assignment) => (
           <TableRow key={assignment.id}>
-            <TableCell className="font-medium">{assignment.training_item.title}</TableCell>
-            <TableCell>{assignment.training_item.type}</TableCell>
+            <TableCell className="font-medium">{assignment.training_item?.title}</TableCell>
+            <TableCell>{assignment.training_item?.type}</TableCell>
             <TableCell>{format(new Date(assignment.assigned_date), 'MMM d, yyyy')}</TableCell>
             <TableCell>
               {assignment.due_date 

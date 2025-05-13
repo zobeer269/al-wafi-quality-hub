@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { TrainingPlan, TrainingItem, TrainingAssignment } from "@/types/training";
+import { TrainingPlan, TrainingItem, TrainingAssignment, TrainingStatus } from "@/types/training";
 import { toast } from "@/components/ui/use-toast";
 
 // Training Plans
@@ -186,7 +185,7 @@ export const deleteTrainingItem = async (id: string) => {
 export const fetchTrainingAssignments = async (options?: {
   userId?: string;
   trainingItemId?: string;
-  status?: string;
+  status?: TrainingStatus;
 }) => {
   let query = supabase
     .from('training_assignments')
@@ -213,8 +212,12 @@ export const fetchTrainingAssignments = async (options?: {
     console.error("Error fetching training assignments:", error);
     throw error;
   }
-  
-  return data;
+
+  // Transform the response to match our expected structure
+  return data.map(item => ({
+    ...item,
+    training_item: item.training_items
+  }));
 };
 
 export const createTrainingAssignment = async (assignment: Omit<TrainingAssignment, 'id'>) => {

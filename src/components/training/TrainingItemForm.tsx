@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +33,7 @@ const formSchema = z.object({
   frequency: z.string().min(1, { message: 'Frequency is required' }),
   evaluation_required: z.boolean().default(false),
   evaluation_type: z.string().optional(),
+  plan_id: z.string().optional(), // Add plan_id to the schema
 });
 
 const trainingTypes = [
@@ -66,16 +66,14 @@ const TrainingItemForm = ({
       frequency: defaultValues?.frequency || 'Annual',
       evaluation_required: defaultValues?.evaluation_required || false,
       evaluation_type: defaultValues?.evaluation_type || '',
+      plan_id: planId || defaultValues?.plan_id || '', // Add plan_id defaultValue
     },
   });
 
   const watchEvaluationRequired = form.watch('evaluation_required');
 
   const handleSubmit = (data: z.infer<typeof formSchema>) => {
-    onSubmit({
-      ...data,
-      plan_id: planId,
-    });
+    onSubmit(data);
   };
 
   return (

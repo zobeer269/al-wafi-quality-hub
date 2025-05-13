@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -293,7 +292,7 @@ const Training = () => {
         
         <TabsContent value="assignments" className="mt-4">
           <TrainingAssignmentsList 
-            assignments={trainingAssignments || []}
+            assignments={trainingAssignments as TrainingAssignmentWithDetails[] || []}
             onComplete={handleCompleteTraining}
             onMarkInProgress={handleMarkInProgress}
             isLoading={isLoadingAssignments}
