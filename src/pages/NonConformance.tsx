@@ -21,19 +21,20 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { NonConformance, NonConformanceFilters, NonConformanceSummary } from '@/types/nonConformance';
-import { getNonConformances, getNonConformanceSummary } from '@/services/nonConformanceService';
+import { getNonConformances, getNonConformanceSummary, getNCSources } from '@/services/nonConformanceService';
 import { toast } from '@/hooks/use-toast';
 
 const NonConformancePage: React.FC = () => {
   const navigate = useNavigate();
   const [nonConformances, setNonConformances] = useState<NonConformance[]>([]);
   const [summary, setSummary] = useState<NonConformanceSummary[]>([]);
+  const [sources, setSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<NonConformanceFilters>({
     status: 'all',
     severity: 'all',
-    category: 'all'
+    source: 'all'
   });
   
   const fetchData = async () => {
@@ -56,6 +57,10 @@ const NonConformancePage: React.FC = () => {
       // Fetch summary statistics
       const summaryData = await getNonConformanceSummary();
       setSummary(summaryData);
+      
+      // Fetch sources for filter
+      const sourceData = await getNCSources();
+      setSources(sourceData);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -88,8 +93,8 @@ const NonConformancePage: React.FC = () => {
     setFilters(prev => ({ ...prev, severity: value as NonConformanceFilters['severity'] }));
   };
 
-  const handleCategoryChange = (value: string) => {
-    setFilters(prev => ({ ...prev, category: value as NonConformanceFilters['category'] }));
+  const handleSourceChange = (value: string) => {
+    setFilters(prev => ({ ...prev, source: value as NonConformanceFilters['source'] }));
   };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,11 +136,11 @@ const NonConformancePage: React.FC = () => {
             </div>
             <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
               <div className="text-sm text-amber-600 font-medium">In Investigation</div>
-              <div className="text-2xl font-bold">{getStatusCount('Investigation')}</div>
+              <div className="text-2xl font-bold">{getStatusCount('In Investigation')}</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-              <div className="text-sm text-green-600 font-medium">Closed</div>
-              <div className="text-2xl font-bold">{getStatusCount('Closed')}</div>
+              <div className="text-sm text-green-600 font-medium">Resolved/Closed</div>
+              <div className="text-2xl font-bold">{getStatusCount('Resolved') + getStatusCount('Closed')}</div>
             </div>
             <div className="bg-red-50 p-4 rounded-lg border border-red-100">
               <div className="text-sm text-red-600 font-medium">Critical</div>
@@ -175,10 +180,8 @@ const NonConformancePage: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="Open">Open</SelectItem>
-                      <SelectItem value="Investigation">Investigation</SelectItem>
-                      <SelectItem value="Containment">Containment</SelectItem>
-                      <SelectItem value="Correction">Correction</SelectItem>
-                      <SelectItem value="Verification">Verification</SelectItem>
+                      <SelectItem value="In Investigation">In Investigation</SelectItem>
+                      <SelectItem value="Resolved">Resolved</SelectItem>
                       <SelectItem value="Closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>
@@ -198,20 +201,20 @@ const NonConformancePage: React.FC = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Category</label>
-                  <Select value={filters.category} onValueChange={handleCategoryChange}>
+                  <label className="text-sm font-medium">Source</label>
+                  <Select value={filters.source} onValueChange={handleSourceChange}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All Categories" />
+                      <SelectValue placeholder="All Sources" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="Material">Material</SelectItem>
-                      <SelectItem value="Process">Process</SelectItem>
-                      <SelectItem value="Equipment">Equipment</SelectItem>
-                      <SelectItem value="Documentation">Documentation</SelectItem>
-                      <SelectItem value="Personnel">Personnel</SelectItem>
-                      <SelectItem value="Environment">Environment</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      <SelectItem value="all">All Sources</SelectItem>
+                      {['Manufacturing', 'Supplier', 'QA Inspection', 'Customer Complaint', 'Other']
+                        .concat(sources)
+                        .filter((v, i, a) => a.indexOf(v) === i)
+                        .map((source) => (
+                          <SelectItem key={source} value={source}>{source}</SelectItem>
+                        ))
+                      }
                     </SelectContent>
                   </Select>
                 </div>
@@ -227,7 +230,7 @@ const NonConformancePage: React.FC = () => {
 
       <Card>
         <CardContent className="p-0">
-          <NCList nonConformances={nonConformances} />
+          <NCList nonConformances={nonConformances} loading={loading} />
         </CardContent>
       </Card>
     </DashboardLayout>

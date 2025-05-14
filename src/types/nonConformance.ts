@@ -3,10 +3,8 @@ export type NonConformanceSeverity = 'Minor' | 'Major' | 'Critical';
 
 export type NonConformanceStatus = 
   | 'Open' 
-  | 'Investigation'
-  | 'Containment'
-  | 'Correction'
-  | 'Verification'
+  | 'In Investigation'
+  | 'Resolved'
   | 'Closed';
 
 export interface NonConformance {
@@ -14,25 +12,21 @@ export interface NonConformance {
   nc_number: string;
   title: string;
   description: string;
-  category: string;
+  source?: string;
   status: NonConformanceStatus;
   severity: NonConformanceSeverity;
-  reported_date: string;
+  linked_batch?: string;
+  linked_supplier_id?: string;
+  linked_capa_id?: string;
+  root_cause?: string;
+  immediate_action?: string;
+  final_action?: string;
   reported_by: string;
   assigned_to?: string;
   due_date?: string;
-  capa_required: boolean;
-  linked_capa_id?: string;
-  linked_audit_finding_id?: string;
-  product_affected?: string;
-  lot_number?: string;
-  containment_action?: string;
-  root_cause?: string;
-  correction?: string;
-  closed_date?: string;
-  closed_by?: string;
   created_at: string;
   updated_at: string;
+  closed_at?: string;
 }
 
 export interface NonConformanceAttachment {
@@ -49,7 +43,7 @@ export interface NonConformanceAttachment {
 export interface NonConformanceFilters {
   status?: NonConformanceStatus | 'all';
   severity?: NonConformanceSeverity | 'all';
-  category?: string | 'all';
+  source?: string | 'all';
   assignedTo?: string | 'all';
   dateFrom?: string;
   dateTo?: string;
