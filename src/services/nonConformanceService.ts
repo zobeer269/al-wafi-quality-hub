@@ -72,7 +72,7 @@ export async function createNonConformance(nonConformance: Omit<NonConformance, 
   try {
     const { data, error } = await supabase
       .from('non_conformances')
-      .insert([nonConformance])
+      .insert(nonConformance)
       .select()
       .single();
 
