@@ -379,6 +379,140 @@ export type Database = {
         }
         Relationships: []
       }
+      nc_attachments: {
+        Row: {
+          description: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          nc_id: string
+          uploaded_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          description?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+          nc_id: string
+          uploaded_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          description?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          nc_id?: string
+          uploaded_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nc_attachments_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      non_conformances: {
+        Row: {
+          assigned_to: string | null
+          capa_required: boolean | null
+          category: string
+          closed_by: string | null
+          closed_date: string | null
+          containment_action: string | null
+          correction: string | null
+          created_at: string | null
+          description: string
+          due_date: string | null
+          id: string
+          linked_audit_finding_id: string | null
+          linked_capa_id: string | null
+          lot_number: string | null
+          nc_number: string
+          product_affected: string | null
+          reported_by: string
+          reported_date: string
+          root_cause: string | null
+          severity: Database["public"]["Enums"]["nc_severity"]
+          status: Database["public"]["Enums"]["nc_status"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          capa_required?: boolean | null
+          category: string
+          closed_by?: string | null
+          closed_date?: string | null
+          containment_action?: string | null
+          correction?: string | null
+          created_at?: string | null
+          description: string
+          due_date?: string | null
+          id?: string
+          linked_audit_finding_id?: string | null
+          linked_capa_id?: string | null
+          lot_number?: string | null
+          nc_number: string
+          product_affected?: string | null
+          reported_by: string
+          reported_date?: string
+          root_cause?: string | null
+          severity: Database["public"]["Enums"]["nc_severity"]
+          status?: Database["public"]["Enums"]["nc_status"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          capa_required?: boolean | null
+          category?: string
+          closed_by?: string | null
+          closed_date?: string | null
+          containment_action?: string | null
+          correction?: string | null
+          created_at?: string | null
+          description?: string
+          due_date?: string | null
+          id?: string
+          linked_audit_finding_id?: string | null
+          linked_capa_id?: string | null
+          lot_number?: string | null
+          nc_number?: string
+          product_affected?: string | null
+          reported_by?: string
+          reported_date?: string
+          root_cause?: string | null
+          severity?: Database["public"]["Enums"]["nc_severity"]
+          status?: Database["public"]["Enums"]["nc_status"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "non_conformances_linked_audit_finding_id_fkey"
+            columns: ["linked_audit_finding_id"]
+            isOneToOne: false
+            referencedRelation: "audit_findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformances_linked_capa_id_fkey"
+            columns: ["linked_capa_id"]
+            isOneToOne: false
+            referencedRelation: "capas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -751,7 +885,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      non_conformance_summary: {
+        Row: {
+          capa_required_count: number | null
+          count: number | null
+          critical_count: number | null
+          status: Database["public"]["Enums"]["nc_status"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -776,6 +918,14 @@ export type Database = {
       document_status: "Draft" | "In Review" | "Approved" | "Obsolete"
       finding_severity: "Minor" | "Major" | "Critical"
       finding_status: "Open" | "In Progress" | "Closed"
+      nc_severity: "Minor" | "Major" | "Critical"
+      nc_status:
+        | "Open"
+        | "Investigation"
+        | "Containment"
+        | "Correction"
+        | "Verification"
+        | "Closed"
       risk_status: "Open" | "Mitigated" | "Closed"
       supplier_status: "Pending" | "Approved" | "Suspended" | "Blacklisted"
       training_status:
@@ -921,6 +1071,15 @@ export const Constants = {
       document_status: ["Draft", "In Review", "Approved", "Obsolete"],
       finding_severity: ["Minor", "Major", "Critical"],
       finding_status: ["Open", "In Progress", "Closed"],
+      nc_severity: ["Minor", "Major", "Critical"],
+      nc_status: [
+        "Open",
+        "Investigation",
+        "Containment",
+        "Correction",
+        "Verification",
+        "Closed",
+      ],
       risk_status: ["Open", "Mitigated", "Closed"],
       supplier_status: ["Pending", "Approved", "Suspended", "Blacklisted"],
       training_status: [

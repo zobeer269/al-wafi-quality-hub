@@ -12,6 +12,9 @@ import Training from "./pages/Training";
 import Suppliers from "./pages/Suppliers";
 import Risk from "./pages/Risk";
 import NonConformance from "./pages/NonConformance";
+import NCDetailPage from "./pages/nonconformance/NCDetailPage";
+import NCCreatePage from "./pages/nonconformance/NCCreatePage";
+import NCEditPage from "./pages/nonconformance/NCEditPage";
 import Change from "./pages/Change";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +36,9 @@ function App() {
             <Route path="/suppliers" element={<Suppliers />} />
             <Route path="/risk" element={<Risk />} />
             <Route path="/nonconformance" element={<NonConformance />} />
+            <Route path="/nonconformance/:id" element={<NCDetailPage />} />
+            <Route path="/nonconformance/create" element={<NCCreatePage />} />
+            <Route path="/nonconformance/edit/:id" element={<NCEditPage />} />
             <Route path="/change" element={<Change />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
