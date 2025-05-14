@@ -97,9 +97,22 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
     try {
       setIsSubmitting(true);
       
+      if (!data.title || !data.description || !data.severity) {
+        toast({
+          title: "Validation Error",
+          description: "Title, description and severity are required fields",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Transform data for API
       const ncData = {
         ...data,
+        title: data.title,
+        description: data.description,
+        severity: data.severity,
         due_date: data.due_date ? data.due_date.toISOString() : undefined,
         // For now, we're using a mock user ID
         reported_by: initialData?.reported_by || "00000000-0000-0000-0000-000000000000",
@@ -109,10 +122,22 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
       
       if (isEditing && initialData?.id) {
         // Update existing NC
-        result = await updateNonConformance(initialData.id, ncData);
+        result = await updateNonConformance(initialData.id, ncData as Partial<NonConformance>);
       } else {
         // Create new NC
-        result = await createNonConformance(ncData);
+        result = await createNonConformance({
+          title: ncData.title,
+          description: ncData.description,
+          severity: ncData.severity,
+          source: ncData.source,
+          linked_batch: ncData.linked_batch,
+          linked_supplier_id: ncData.linked_supplier_id,
+          linked_capa_id: ncData.linked_capa_id,
+          immediate_action: ncData.immediate_action,
+          reported_by: ncData.reported_by,
+          assigned_to: ncData.assigned_to,
+          due_date: ncData.due_date,
+        });
       }
       
       if (result) {
@@ -233,7 +258,7 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Open">Open</SelectItem>
-                      <SelectItem value="In Investigation">In Investigation</SelectItem>
+                      <SelectItem value="Investigation">Investigation</SelectItem>
                       <SelectItem value="Resolved">Resolved</SelectItem>
                       <SelectItem value="Closed">Closed</SelectItem>
                     </SelectContent>

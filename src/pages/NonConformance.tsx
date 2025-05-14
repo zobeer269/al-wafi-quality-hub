@@ -135,8 +135,8 @@ const NonConformancePage: React.FC = () => {
               <div className="text-2xl font-bold">{getStatusCount('Open')}</div>
             </div>
             <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
-              <div className="text-sm text-amber-600 font-medium">In Investigation</div>
-              <div className="text-2xl font-bold">{getStatusCount('In Investigation')}</div>
+              <div className="text-sm text-amber-600 font-medium">Investigation</div>
+              <div className="text-2xl font-bold">{getStatusCount('Investigation')}</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border border-green-100">
               <div className="text-sm text-green-600 font-medium">Resolved/Closed</div>
@@ -180,7 +180,7 @@ const NonConformancePage: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="Open">Open</SelectItem>
-                      <SelectItem value="In Investigation">In Investigation</SelectItem>
+                      <SelectItem value="Investigation">Investigation</SelectItem>
                       <SelectItem value="Resolved">Resolved</SelectItem>
                       <SelectItem value="Closed">Closed</SelectItem>
                     </SelectContent>

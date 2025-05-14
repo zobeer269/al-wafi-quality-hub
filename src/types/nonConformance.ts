@@ -3,7 +3,7 @@ export type NonConformanceSeverity = 'Minor' | 'Major' | 'Critical';
 
 export type NonConformanceStatus = 
   | 'Open' 
-  | 'In Investigation'
+  | 'Investigation'
   | 'Resolved'
   | 'Closed';
 

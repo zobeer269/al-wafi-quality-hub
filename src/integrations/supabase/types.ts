@@ -442,6 +442,7 @@ export type Database = {
           reported_date: string
           root_cause: string | null
           severity: Database["public"]["Enums"]["nc_severity"]
+          source: string | null
           status: Database["public"]["Enums"]["nc_status"]
           title: string
           updated_at: string | null
@@ -467,6 +468,7 @@ export type Database = {
           reported_date?: string
           root_cause?: string | null
           severity: Database["public"]["Enums"]["nc_severity"]
+          source?: string | null
           status?: Database["public"]["Enums"]["nc_status"]
           title: string
           updated_at?: string | null
@@ -492,6 +494,7 @@ export type Database = {
           reported_date?: string
           root_cause?: string | null
           severity?: Database["public"]["Enums"]["nc_severity"]
+          source?: string | null
           status?: Database["public"]["Enums"]["nc_status"]
           title?: string
           updated_at?: string | null
