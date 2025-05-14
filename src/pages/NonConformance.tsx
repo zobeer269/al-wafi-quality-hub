@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Filter, Plus, Search } from 'lucide-react';
@@ -139,8 +138,8 @@ const NonConformancePage: React.FC = () => {
               <div className="text-2xl font-bold">{getStatusCount('Investigation')}</div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-              <div className="text-sm text-green-600 font-medium">Resolved/Closed</div>
-              <div className="text-2xl font-bold">{getStatusCount('Resolved') + getStatusCount('Closed')}</div>
+              <div className="text-sm text-green-600 font-medium">Verification/Closed</div>
+              <div className="text-2xl font-bold">{getStatusCount('Verification') + getStatusCount('Closed')}</div>
             </div>
             <div className="bg-red-50 p-4 rounded-lg border border-red-100">
               <div className="text-sm text-red-600 font-medium">Critical</div>
@@ -181,7 +180,9 @@ const NonConformancePage: React.FC = () => {
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="Open">Open</SelectItem>
                       <SelectItem value="Investigation">Investigation</SelectItem>
-                      <SelectItem value="Resolved">Resolved</SelectItem>
+                      <SelectItem value="Containment">Containment</SelectItem>
+                      <SelectItem value="Correction">Correction</SelectItem>
+                      <SelectItem value="Verification">Verification</SelectItem>
                       <SelectItem value="Closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>

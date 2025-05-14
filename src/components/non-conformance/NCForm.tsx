@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -259,7 +258,9 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
                     <SelectContent>
                       <SelectItem value="Open">Open</SelectItem>
                       <SelectItem value="Investigation">Investigation</SelectItem>
-                      <SelectItem value="Resolved">Resolved</SelectItem>
+                      <SelectItem value="Containment">Containment</SelectItem>
+                      <SelectItem value="Correction">Correction</SelectItem>
+                      <SelectItem value="Verification">Verification</SelectItem>
                       <SelectItem value="Closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>

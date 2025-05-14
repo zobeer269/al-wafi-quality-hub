@@ -4,7 +4,8 @@ import type {
   NonConformance, 
   NonConformanceAttachment, 
   NonConformanceFilters, 
-  NonConformanceSummary 
+  NonConformanceSummary,
+  NonConformanceStatus 
 } from "@/types/nonConformance";
 import { toast } from "@/hooks/use-toast";
 
@@ -135,6 +136,11 @@ export async function updateNonConformance(id: string, updates: Partial<NonConfo
     // If status is changing to 'Closed', add closed_at timestamp
     if (updates.status === 'Closed' && !updates.closed_at) {
       updates.closed_at = new Date().toISOString();
+    }
+    
+    // Map 'Resolved' status (if present) to 'Verification' to match the database enum
+    if (updates.status === 'Resolved' as any) {
+      updates.status = 'Verification';
     }
     
     const { data, error } = await supabase

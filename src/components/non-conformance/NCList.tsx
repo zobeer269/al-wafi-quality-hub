@@ -50,9 +50,13 @@ const NCList: React.FC<NCListProps> = ({ nonConformances, loading = false }) => 
     switch (status) {
       case 'Open':
         return <Badge variant="outline" className="border-blue-500 text-blue-500">{status}</Badge>;
-      case 'In Investigation':
+      case 'Investigation':
         return <Badge variant="outline" className="border-amber-500 text-amber-500">{status}</Badge>;
-      case 'Resolved':
+      case 'Containment':
+        return <Badge variant="outline" className="border-yellow-500 text-yellow-500">{status}</Badge>;
+      case 'Correction':
+        return <Badge variant="outline" className="border-purple-500 text-purple-500">{status}</Badge>;
+      case 'Verification':
         return <Badge variant="outline" className="border-green-500 text-green-500">{status}</Badge>;
       case 'Closed':
         return <Badge variant="outline" className="border-gray-500 text-gray-500">{status}</Badge>;

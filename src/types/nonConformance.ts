@@ -4,7 +4,9 @@ export type NonConformanceSeverity = 'Minor' | 'Major' | 'Critical';
 export type NonConformanceStatus = 
   | 'Open' 
   | 'Investigation'
-  | 'Resolved'
+  | 'Containment'
+  | 'Correction'
+  | 'Verification'
   | 'Closed';
 
 export interface NonConformance {
