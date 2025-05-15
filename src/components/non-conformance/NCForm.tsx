@@ -296,9 +296,12 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {['Manufacturing', 'Supplier', 'QA Inspection', 'Customer Complaint', 'Other'].concat(sources).filter((v, i, a) => a.indexOf(v) === i).map((source) => (
-                      <SelectItem key={source} value={source}>{source}</SelectItem>
-                    ))}
+                    {['Manufacturing', 'Supplier', 'QA Inspection', 'Customer Complaint', 'Other']
+                      .concat(sources)
+                      .filter((v, i, a) => a.indexOf(v) === i)
+                      .map((source) => (
+                        <SelectItem key={source} value={source}>{source}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <FormDescription>
@@ -416,7 +419,7 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {auditFindings.map((finding) => (
                         <SelectItem key={finding.id} value={finding.id}>
                           {finding.finding_number} - {finding.description.substring(0, 30)}...
@@ -475,7 +478,7 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {openCAPAs.map((capa) => (
                           <SelectItem key={capa.id} value={capa.id}>
                             {capa.number} - {capa.title.substring(0, 30)}...

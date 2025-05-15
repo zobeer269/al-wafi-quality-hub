@@ -1,8 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 
-// Simple types for integration
 export interface AuditFinding {
   id: string;
   finding_number: string;
@@ -10,148 +8,165 @@ export interface AuditFinding {
   description: string;
   severity: string;
   status: string;
+  due_date?: string;
 }
 
 export interface CAPA {
   id: string;
   number: string;
   title: string;
-  capa_type: string;
+  description: string;
+  capa_type: 'Corrective' | 'Preventive' | 'Both';
+  priority: 'Low' | 'Medium' | 'High';
   status: string;
+  linked_nc_id?: string;
+  linked_audit_finding_id?: string;
 }
 
+/**
+ * Get all open audit findings
+ */
 export async function getOpenAuditFindings(): Promise<AuditFinding[]> {
   try {
     const { data, error } = await supabase
       .from('audit_findings')
       .select('*')
-      .in('status', ['Open', 'In Progress'])
-      .order('created_at', { ascending: false });
+      .eq('status', 'Open');
 
     if (error) {
-      console.error('Error fetching audit findings:', error);
-      toast({
-        title: "Error",
-        description: `Failed to fetch audit findings: ${error.message}`,
-        variant: "destructive"
-      });
-      throw new Error(error.message);
+      console.error('Error fetching open audit findings:', error);
+      return [];
     }
 
-    return data as AuditFinding[];
+    return data;
   } catch (error) {
-    console.error('Error in getOpenAuditFindings:', error);
+    console.error('Exception fetching open audit findings:', error);
     return [];
   }
 }
 
+/**
+ * Get all open CAPAs
+ */
 export async function getOpenCAPAs(): Promise<CAPA[]> {
   try {
     const { data, error } = await supabase
       .from('capas')
       .select('*')
-      .in('status', ['Open', 'Investigation', 'In Progress'])
-      .order('created_at', { ascending: false });
+      .in('status', ['Open', 'In Progress']);
 
     if (error) {
-      console.error('Error fetching CAPAs:', error);
-      toast({
-        title: "Error",
-        description: `Failed to fetch CAPAs: ${error.message}`,
-        variant: "destructive"
-      });
-      throw new Error(error.message);
+      console.error('Error fetching open CAPAs:', error);
+      return [];
     }
 
-    return data as CAPA[];
+    return data.map(capa => ({
+      id: capa.id,
+      number: capa.number,
+      title: capa.title || `CAPA ${capa.number}`, // Fallback title
+      description: capa.description,
+      capa_type: capa.capa_type,
+      priority: mapPriorityToLevel(capa.priority),
+      status: capa.status,
+      linked_nc_id: capa.linked_nc_id,
+      linked_audit_finding_id: capa.linked_audit_finding_id,
+    }));
   } catch (error) {
-    console.error('Error in getOpenCAPAs:', error);
+    console.error('Exception fetching open CAPAs:', error);
     return [];
   }
 }
 
-export async function getAuditFindingById(id: string): Promise<AuditFinding | null> {
-  try {
-    const { data, error } = await supabase
-      .from('audit_findings')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching audit finding:', error);
-      return null;
-    }
-
-    return data as AuditFinding;
-  } catch (error) {
-    console.error('Error in getAuditFindingById:', error);
-    return null;
-  }
-}
-
-export async function getCAPAById(id: string): Promise<CAPA | null> {
-  try {
-    const { data, error } = await supabase
-      .from('capas')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching CAPA:', error);
-      return null;
-    }
-
-    return data as CAPA;
-  } catch (error) {
-    console.error('Error in getCAPAById:', error);
-    return null;
-  }
-}
-
-export async function createCAPAFromNC(ncData: {
+/**
+ * Create a new CAPA from a Non-Conformance
+ */
+export async function createCAPAFromNC(data: {
   title: string;
   description: string;
   severity: string;
   nc_id: string;
   reported_by: string;
-}): Promise<CAPA | null> {
+}): Promise<CAPA> {
   try {
-    // Determine CAPA type based on NC severity
-    const capaType = ncData.severity === 'Critical' ? 'Corrective' : 'Both';
+    // Map severity to priority
+    const priority = mapSeverityToPriority(data.severity);
     
-    const { data, error } = await supabase
+    // Determine CAPA type based on severity
+    const capa_type = data.severity === 'Critical' ? 'Corrective' : 'Both';
+    
+    // Insert new CAPA
+    const { data: capaData, error } = await supabase
       .from('capas')
       .insert({
-        title: `CAPA for ${ncData.title}`,
-        description: ncData.description,
-        capa_type: capaType,
-        priority: ncData.severity === 'Critical' ? 3 : ncData.severity === 'Major' ? 2 : 1,
-        created_by: ncData.reported_by,
-        status: 'Open'
+        description: data.description,
+        title: `CAPA for: ${data.title}`,
+        priority: priority,
+        capa_type: capa_type,
+        status: 'Open',
+        linked_nc_id: data.nc_id,
+        created_by: data.reported_by,
       })
       .select()
       .single();
 
     if (error) {
       console.error('Error creating CAPA:', error);
-      toast({
-        title: "Error",
-        description: `Failed to create CAPA: ${error.message}`,
-        variant: "destructive"
-      });
-      throw new Error(error.message);
+      throw new Error(`Failed to create CAPA: ${error.message}`);
     }
 
-    toast({
-      title: "Success",
-      description: `CAPA ${data.number} created successfully`
-    });
+    // Update the NC with the linked CAPA ID
+    if (data.nc_id) {
+      const { error: updateError } = await supabase
+        .from('non_conformances')
+        .update({ linked_capa_id: capaData.id })
+        .eq('id', data.nc_id);
 
-    return data as CAPA;
+      if (updateError) {
+        console.error('Error updating NC with CAPA link:', updateError);
+      }
+    }
+
+    return {
+      id: capaData.id,
+      number: capaData.number,
+      title: capaData.title,
+      description: capaData.description,
+      capa_type: capaData.capa_type,
+      priority: mapPriorityToLevel(capaData.priority),
+      status: capaData.status,
+      linked_nc_id: capaData.linked_nc_id,
+      linked_audit_finding_id: capaData.linked_audit_finding_id,
+    };
   } catch (error) {
-    console.error('Error in createCAPAFromNC:', error);
-    return null;
+    console.error('Exception creating CAPA:', error);
+    throw error;
+  }
+}
+
+/**
+ * Helper function to map severity to priority number
+ */
+function mapSeverityToPriority(severity: string): number {
+  switch (severity) {
+    case 'Critical':
+      return 3; // High
+    case 'Major':
+      return 2; // Medium
+    default:
+      return 1; // Low
+  }
+}
+
+/**
+ * Helper function to map priority number to level
+ */
+function mapPriorityToLevel(priority: number): 'Low' | 'Medium' | 'High' {
+  switch (priority) {
+    case 3:
+      return 'High';
+    case 2:
+      return 'Medium';
+    default:
+      return 'Low';
   }
 }
