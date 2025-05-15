@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { NonConformance, NonConformanceSeverity, NonConformanceStatus } from '@/types/nonConformance';
 import { createNonConformance, updateNonConformance, getNCSources } from '@/services/nonConformanceService';
 import { Button } from '@/components/ui/button';
@@ -31,9 +32,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { getOpenAuditFindings, getOpenCAPAs, createCAPAFromNC, AuditFinding, CAPA } from '@/services/integrationService';
 
 interface NCFormProps {
   initialData?: NonConformance;
@@ -48,18 +59,23 @@ const formSchema = z.object({
   linked_batch: z.string().optional(),
   linked_supplier_id: z.string().optional(),
   linked_capa_id: z.string().optional(),
+  linked_audit_finding_id: z.string().optional(),
   status: z.string().min(1, 'Status is required'),
   assigned_to: z.string().optional(),
   due_date: z.date().optional(),
   root_cause: z.string().optional(),
   immediate_action: z.string().optional(),
   final_action: z.string().optional(),
+  capa_required: z.boolean().optional(),
 });
 
 const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sources, setSources] = useState<string[]>([]);
+  const [openCAPAs, setOpenCAPAs] = useState<CAPA[]>([]);
+  const [auditFindings, setAuditFindings] = useState<AuditFinding[]>([]);
+  const [createCAPADialogOpen, setCreateCAPADialogOpen] = useState(false);
   
   // Initialize form with default values or initial data
   const form = useForm<z.infer<typeof formSchema>>({
@@ -67,6 +83,7 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
     defaultValues: initialData ? {
       ...initialData,
       due_date: initialData.due_date ? new Date(initialData.due_date) : undefined,
+      capa_required: initialData.capa_required || false,
     } : {
       title: '',
       description: '',
@@ -76,20 +93,31 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
       linked_batch: '',
       linked_supplier_id: '',
       linked_capa_id: '',
+      linked_audit_finding_id: '',
       assigned_to: '',
       root_cause: '',
       immediate_action: '',
       final_action: '',
+      capa_required: false,
     },
   });
 
   useEffect(() => {
-    const loadSources = async () => {
+    const loadData = async () => {
+      // Load sources
       const sourceData = await getNCSources();
       setSources(sourceData);
+
+      // Load open CAPAs for linking
+      const capasData = await getOpenCAPAs();
+      setOpenCAPAs(capasData);
+
+      // Load open audit findings for linking
+      const findingsData = await getOpenAuditFindings();
+      setAuditFindings(findingsData);
     };
     
-    loadSources();
+    loadData();
   }, []);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -132,10 +160,12 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
           linked_batch: ncData.linked_batch,
           linked_supplier_id: ncData.linked_supplier_id,
           linked_capa_id: ncData.linked_capa_id,
+          linked_audit_finding_id: ncData.linked_audit_finding_id,
           immediate_action: ncData.immediate_action,
           reported_by: ncData.reported_by,
           assigned_to: ncData.assigned_to,
           due_date: ncData.due_date,
+          capa_required: ncData.capa_required,
         });
       }
       
@@ -159,6 +189,46 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
       toast({
         title: "Error",
         description: `An error occurred: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateCAPAFromNC = async () => {
+    const formData = form.getValues();
+    
+    try {
+      setIsSubmitting(true);
+      
+      const capaResult = await createCAPAFromNC({
+        title: formData.title,
+        description: formData.description,
+        severity: formData.severity,
+        nc_id: initialData?.id || '',
+        reported_by: initialData?.reported_by || "00000000-0000-0000-0000-000000000000",
+      });
+      
+      if (capaResult) {
+        // Update the form with the linked CAPA ID
+        form.setValue('linked_capa_id', capaResult.id);
+        
+        // Update the CAPAs list
+        setOpenCAPAs([...openCAPAs, capaResult]);
+        
+        setCreateCAPADialogOpen(false);
+        
+        toast({
+          title: "Success",
+          description: `CAPA ${capaResult.number} created and linked to this non-conformance`,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating CAPA:', error);
+      toast({
+        title: "Error",
+        description: `Failed to create CAPA: ${(error as Error).message}`,
         variant: "destructive",
       });
     } finally {
@@ -327,6 +397,155 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
               </FormItem>
             )}
           />
+          
+          {/* New fields for CAPA and Audit Finding integration */}
+          <FormField
+            control={form.control}
+            name="linked_audit_finding_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Linked Audit Finding</FormLabel>
+                <div className="flex gap-2">
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Link to an audit finding" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {auditFindings.map((finding) => (
+                        <SelectItem key={finding.id} value={finding.id}>
+                          {finding.finding_number} - {finding.description.substring(0, 30)}...
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <FormDescription>
+                  If this non-conformance relates to an audit finding, select it here.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="space-y-2">
+            <FormField
+              control={form.control}
+              name="capa_required"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      checked={field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>CAPA Required</FormLabel>
+                    <FormDescription>
+                      Is a Corrective and Preventive Action (CAPA) required for this non-conformance?
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          
+            <FormField
+              control={form.control}
+              name="linked_capa_id"
+              render={({ field }) => (
+                <FormItem className={!form.watch('capa_required') ? 'opacity-50' : ''}>
+                  <FormLabel>Linked CAPA</FormLabel>
+                  <div className="flex gap-2">
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || ""}
+                      disabled={!form.watch('capa_required')}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Link to a CAPA" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {openCAPAs.map((capa) => (
+                          <SelectItem key={capa.id} value={capa.id}>
+                            {capa.number} - {capa.title.substring(0, 30)}...
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <Dialog open={createCAPADialogOpen} onOpenChange={setCreateCAPADialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          disabled={!form.watch('capa_required')}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Create New CAPA</DialogTitle>
+                          <DialogDescription>
+                            This will create a new CAPA record linked to this non-conformance.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <p className="text-sm text-muted-foreground mb-4">
+                            A new CAPA will be created with the following details:
+                          </p>
+                          <div className="space-y-2">
+                            <div>
+                              <span className="font-medium">Title:</span> CAPA for {form.watch('title')}
+                            </div>
+                            <div>
+                              <span className="font-medium">Description:</span> {form.watch('description').substring(0, 100)}...
+                            </div>
+                            <div>
+                              <span className="font-medium">Type:</span> {form.watch('severity') === 'Critical' ? 'Corrective' : 'Both'}
+                            </div>
+                            <div>
+                              <span className="font-medium">Priority:</span> {form.watch('severity') === 'Critical' ? 'High' : form.watch('severity') === 'Major' ? 'Medium' : 'Low'}
+                            </div>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setCreateCAPADialogOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handleCreateCAPAFromNC} 
+                            disabled={isSubmitting}
+                          >
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create CAPA
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <FormDescription>
+                    Select an existing CAPA or create a new one.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
 
         <FormField

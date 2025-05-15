@@ -516,6 +516,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          notification_type: string
+          read_at: string | null
+          related_id: string
+          related_to: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          notification_type: string
+          read_at?: string | null
+          related_id: string
+          related_to: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          notification_type?: string
+          read_at?: string | null
+          related_id?: string
+          related_to?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -905,6 +941,14 @@ export type Database = {
           requested_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      is_qa_or_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      send_nc_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {

@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarCheck, Clock, Edit, FileText, UploadCloud, User } from 'lucide-react';
+import { CalendarCheck, Clock, Edit, FileText, UploadCloud, User, Clipboard, AlertCircle, LinkIcon } from 'lucide-react';
 import { 
   NonConformance, 
   NonConformanceAttachment 
 } from '@/types/nonConformance';
 import { getAttachments, uploadAttachment } from '@/services/nonConformanceService';
+import { getCAPAById, getAuditFindingById, CAPA, AuditFinding } from '@/services/integrationService';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,15 +37,30 @@ const NCDetail: React.FC<NCDetailProps> = ({ nonConformance }) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileDescription, setFileDescription] = useState('');
+  const [linkedCAPA, setLinkedCAPA] = useState<CAPA | null>(null);
+  const [linkedFinding, setLinkedFinding] = useState<AuditFinding | null>(null);
   
   useEffect(() => {
-    const loadAttachments = async () => {
-      const data = await getAttachments(nonConformance.id);
-      setAttachments(data);
+    const loadData = async () => {
+      // Load attachments
+      const attachmentData = await getAttachments(nonConformance.id);
+      setAttachments(attachmentData);
+      
+      // Load linked CAPA if exists
+      if (nonConformance.linked_capa_id) {
+        const capaData = await getCAPAById(nonConformance.linked_capa_id);
+        setLinkedCAPA(capaData);
+      }
+      
+      // Load linked Audit Finding if exists
+      if (nonConformance.linked_audit_finding_id) {
+        const findingData = await getAuditFindingById(nonConformance.linked_audit_finding_id);
+        setLinkedFinding(findingData);
+      }
     };
     
-    loadAttachments();
-  }, [nonConformance.id]);
+    loadData();
+  }, [nonConformance.id, nonConformance.linked_capa_id, nonConformance.linked_audit_finding_id]);
   
   const handleEditNC = () => {
     navigate(`/nonconformance/edit/${nonConformance.id}`);
@@ -107,9 +123,13 @@ const NCDetail: React.FC<NCDetailProps> = ({ nonConformance }) => {
     switch (status) {
       case 'Open':
         return <Badge variant="outline" className="border-blue-500 text-blue-500">{status}</Badge>;
-      case 'In Investigation':
+      case 'Investigation':
         return <Badge variant="outline" className="border-amber-500 text-amber-500">{status}</Badge>;
-      case 'Resolved':
+      case 'Containment':
+        return <Badge variant="outline" className="border-yellow-500 text-yellow-500">{status}</Badge>;  
+      case 'Correction':
+        return <Badge variant="outline" className="border-purple-500 text-purple-500">{status}</Badge>;
+      case 'Verification':
         return <Badge variant="outline" className="border-green-500 text-green-500">{status}</Badge>;
       case 'Closed':
         return <Badge variant="outline" className="border-gray-500 text-gray-500">{status}</Badge>;
@@ -182,16 +202,41 @@ const NCDetail: React.FC<NCDetailProps> = ({ nonConformance }) => {
                     {nonConformance.assigned_to || 'Unassigned'}
                   </dd>
                 </div>
+                
+                {/* Linked CAPA Display */}
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Linked CAPA:</dt>
                   <dd>
-                    {nonConformance.linked_capa_id ? (
-                      <a 
-                        href={`/capa/${nonConformance.linked_capa_id}`} 
-                        className="text-primary hover:underline"
-                      >
-                        View CAPA
-                      </a>
+                    {linkedCAPA ? (
+                      <div className="flex items-center">
+                        <LinkIcon className="mr-1 h-3 w-3" />
+                        <a 
+                          href={`/capa/${linkedCAPA.id}`} 
+                          className="text-primary hover:underline"
+                        >
+                          {linkedCAPA.number} ({linkedCAPA.status})
+                        </a>
+                      </div>
+                    ) : nonConformance.capa_required ? (
+                      <span className="text-amber-500">Required but not linked</span>
+                    ) : 'None'}
+                  </dd>
+                </div>
+                
+                {/* Linked Audit Finding Display */}
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Linked Audit Finding:</dt>
+                  <dd>
+                    {linkedFinding ? (
+                      <div className="flex items-center">
+                        <Clipboard className="mr-1 h-3 w-3" />
+                        <a 
+                          href={`/audit/finding/${linkedFinding.id}`} 
+                          className="text-primary hover:underline"
+                        >
+                          {linkedFinding.finding_number}
+                        </a>
+                      </div>
                     ) : 'None'}
                   </dd>
                 </div>

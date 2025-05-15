@@ -20,6 +20,7 @@ export interface NonConformance {
   linked_batch?: string;
   linked_supplier_id?: string;
   linked_capa_id?: string;
+  linked_audit_finding_id?: string;
   root_cause?: string;
   immediate_action?: string;
   final_action?: string;
@@ -29,6 +30,7 @@ export interface NonConformance {
   created_at: string;
   updated_at: string;
   closed_at?: string;
+  capa_required?: boolean;
 }
 
 export interface NonConformanceAttachment {
