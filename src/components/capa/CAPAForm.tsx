@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -19,6 +18,8 @@ const formSchema = z.object({
   description: z.string().min(10, { message: "Description must be at least 10 characters" }),
   assignedTo: z.string().optional(),
   dueDate: z.string().optional(),
+  linked_nc_id: z.string().optional(),
+  linked_audit_finding_id: z.string().optional(),
 });
 
 type CAPAFormValues = z.infer<typeof formSchema>;
@@ -50,6 +51,8 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
       description: defaultValues?.description || "",
       assignedTo: defaultValues?.assignedTo || "",
       dueDate: defaultValues?.dueDate || "",
+      linked_nc_id: defaultValues?.linked_nc_id || "",
+      linked_audit_finding_id: defaultValues?.linked_audit_finding_id || "",
     }
   });
 
@@ -186,6 +189,10 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
             </FormItem>
           )}
         />
+        
+        {/* Hidden fields for linked items */}
+        <input type="hidden" {...form.register("linked_nc_id")} />
+        <input type="hidden" {...form.register("linked_audit_finding_id")} />
         
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>

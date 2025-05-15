@@ -21,6 +21,10 @@ export interface CAPA {
   status: string;
   linked_nc_id?: string;
   linked_audit_finding_id?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  closed_date?: string;
 }
 
 /**
@@ -134,6 +138,19 @@ export async function getAuditFindingById(id: string): Promise<AuditFinding | nu
 }
 
 /**
+ * Generate a CAPA number based on the current date and a random sequence
+ */
+function generateCAPANumber(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const random = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+  
+  return `CAPA-${year}${month}${day}-${random}`;
+}
+
+/**
  * Create a new CAPA from a Non-Conformance
  */
 export async function createCAPAFromNC(data: {
@@ -150,6 +167,9 @@ export async function createCAPAFromNC(data: {
     // Determine CAPA type based on severity
     const capa_type = data.severity === 'Critical' ? 'Corrective' : 'Both';
     
+    // Generate a unique CAPA number
+    const capaNumber = generateCAPANumber();
+    
     // Insert new CAPA
     const { data: capaData, error } = await supabase
       .from('capas')
@@ -161,6 +181,7 @@ export async function createCAPAFromNC(data: {
         status: 'Open',
         linked_nc_id: data.nc_id,
         created_by: data.reported_by,
+        number: capaNumber
       })
       .select()
       .single();
