@@ -1,4 +1,4 @@
-import { CAPA } from "@/types/document";
+import { CAPA, CAPAPriority } from "@/types/document";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Database } from "@/integrations/supabase/types";
@@ -16,7 +16,7 @@ export const convertToCAPAType = (capa: SupabaseCapa): CAPA => {
     title: capa.title,
     type: capa.capa_type,
     status: capa.status,
-    priority: capa.priority,
+    priority: capa.priority as CAPAPriority,
     createdDate: capa.created_at || "",
     dueDate: capa.due_date || undefined,
     assignedTo: capa.assigned_to || undefined,
@@ -27,6 +27,8 @@ export const convertToCAPAType = (capa: SupabaseCapa): CAPA => {
     effectiveness_check_required: capa.effectiveness_check_required || false,
     effectiveness_verified: capa.effectiveness_verified || false,
     created_by: capa.created_by,
+    linked_nc_id: capa.linked_nc_id || undefined,
+    linked_audit_finding_id: capa.linked_audit_finding_id || undefined,
   };
 };
 
@@ -44,6 +46,8 @@ export const convertToSupabaseInsert = (capa: Partial<CAPA>, userId: string): Su
     created_by: userId,
     root_cause: capa.root_cause || null,
     action_plan: capa.action_plan || null,
+    linked_nc_id: capa.linked_nc_id || null,
+    linked_audit_finding_id: capa.linked_audit_finding_id || null,
   };
 };
 
@@ -63,6 +67,8 @@ export const convertToSupabaseUpdate = (capa: Partial<CAPA>): SupabaseCapaUpdate
     effectiveness_check_required: capa.effectiveness_check_required,
     effectiveness_verified: capa.effectiveness_verified,
     updated_at: new Date().toISOString(),
+    linked_nc_id: capa.linked_nc_id,
+    linked_audit_finding_id: capa.linked_audit_finding_id,
   };
 };
 

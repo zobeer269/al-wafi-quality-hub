@@ -1,7 +1,15 @@
+
 export type DocumentStatus = 'Approved' | 'In Review' | 'Draft' | 'Obsolete';
 export type CAPAStatus = 'Open' | 'Investigation' | 'In Progress' | 'Closed';
 export type CAPAType = 'Corrective' | 'Preventive' | 'Both';
 export type UserRole = 'admin' | 'manager' | 'supervisor' | 'user' | 'readonly';
+export type CAPAPriority = 1 | 2 | 3;
+
+export const priorityLabelMap = {
+  1: "Low",
+  2: "Medium",
+  3: "High",
+} as const;
 
 export interface Document {
   id: string;
@@ -12,10 +20,9 @@ export interface Document {
   status: DocumentStatus;
   lastUpdated: string;
   description?: string;
-  content_url?: string; // Added this property to fix the build error
+  content_url?: string;
 }
 
-// Update the CAPA interface to match the database schema
 export interface CAPA {
   id: string;
   number: string;
@@ -23,7 +30,7 @@ export interface CAPA {
   description: string;
   type: CAPAType;
   status: CAPAStatus;
-  priority: number | 'Low' | 'Medium' | 'High';
+  priority: CAPAPriority;
   createdDate?: string;
   dueDate?: string;
   assignedTo?: string;

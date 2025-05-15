@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CAPA, CAPAStatus } from '@/types/document';
+import { CAPA, CAPAStatus, CAPAPriority, priorityLabelMap } from '@/types/document';
 import { Clock, Download, FileText, User, Edit, Check, Save } from 'lucide-react';
 import { updateCAPA } from '@/services/capaService';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -77,7 +77,7 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
   };
 
   // Format priority badge
-  const getPriorityBadge = (priority: number) => {
+  const getPriorityBadge = (priority: CAPAPriority) => {
     switch(priority) {
       case 3:
         return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">High</span>;

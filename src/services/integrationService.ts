@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { CAPAPriority, priorityLabelMap } from '@/types/document';
 
 export interface AuditFinding {
   id: string;
@@ -17,7 +18,7 @@ export interface CAPA {
   title: string;
   description: string;
   capa_type: 'Corrective' | 'Preventive' | 'Both';
-  priority: 'Low' | 'Medium' | 'High';
+  priority: CAPAPriority;
   status: string;
   linked_nc_id?: string;
   linked_audit_finding_id?: string;
@@ -70,7 +71,7 @@ export async function getOpenCAPAs(): Promise<CAPA[]> {
       title: capa.title || `CAPA ${capa.number}`, // Fallback title
       description: capa.description,
       capa_type: capa.capa_type,
-      priority: mapPriorityToLevel(capa.priority),
+      priority: capa.priority as CAPAPriority,
       status: capa.status,
       linked_nc_id: capa.linked_nc_id,
       linked_audit_finding_id: capa.linked_audit_finding_id,
@@ -103,7 +104,7 @@ export async function getCAPAById(id: string): Promise<CAPA | null> {
       title: data.title || `CAPA ${data.number}`,
       description: data.description,
       capa_type: data.capa_type,
-      priority: mapPriorityToLevel(data.priority),
+      priority: data.priority as CAPAPriority,
       status: data.status,
       linked_nc_id: data.linked_nc_id,
       linked_audit_finding_id: data.linked_audit_finding_id,
@@ -209,7 +210,7 @@ export async function createCAPAFromNC(data: {
       title: capaData.title,
       description: capaData.description,
       capa_type: capaData.capa_type,
-      priority: mapPriorityToLevel(capaData.priority),
+      priority: capaData.priority as CAPAPriority,
       status: capaData.status,
       linked_nc_id: capaData.linked_nc_id,
       linked_audit_finding_id: capaData.linked_audit_finding_id,
@@ -223,7 +224,7 @@ export async function createCAPAFromNC(data: {
 /**
  * Helper function to map severity to priority number
  */
-function mapSeverityToPriority(severity: string): number {
+function mapSeverityToPriority(severity: string): CAPAPriority {
   switch (severity) {
     case 'Critical':
       return 3; // High
@@ -231,19 +232,5 @@ function mapSeverityToPriority(severity: string): number {
       return 2; // Medium
     default:
       return 1; // Low
-  }
-}
-
-/**
- * Helper function to map priority number to level
- */
-function mapPriorityToLevel(priority: number): 'Low' | 'Medium' | 'High' {
-  switch (priority) {
-    case 3:
-      return 'High';
-    case 2:
-      return 'Medium';
-    default:
-      return 'Low';
   }
 }

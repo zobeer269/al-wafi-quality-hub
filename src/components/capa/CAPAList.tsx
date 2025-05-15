@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { CAPAStatus, CAPAType, CAPA } from '@/types/document';
+import { CAPAStatus, CAPAType, CAPA, CAPAPriority, priorityLabelMap } from '@/types/document';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -23,7 +23,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ capas, onSelectCAPA, onFilterStatus
     }
   };
   
-  const getPriorityBadge = (priority: number) => {
+  const getPriorityBadge = (priority: CAPAPriority) => {
     switch(priority) {
       case 3:
         return <Badge variant="destructive">High</Badge>;

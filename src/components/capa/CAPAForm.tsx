@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -8,13 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
-import { CAPAType, CAPAStatus } from '@/types/document';
+import { CAPAType, CAPAStatus, CAPAPriority } from '@/types/document';
 
 const formSchema = z.object({
   number: z.string().min(1, { message: "CAPA ID is required" }),
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
   type: z.enum(["Corrective", "Preventive", "Both"] as const),
-  priority: z.enum(["1", "2", "3"] as const),
+  priority: z.enum(["1", "2", "3"] as const), // Form uses string values
   description: z.string().min(10, { message: "Description must be at least 10 characters" }),
   assignedTo: z.string().optional(),
   dueDate: z.string().optional(),
@@ -47,7 +48,7 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
       number: defaultCAPANumber,
       title: defaultValues?.title || "",
       type: (defaultValues?.type as CAPAType) || "Corrective",
-      priority: (defaultValues?.priority as "1" | "2" | "3") || "2",
+      priority: (defaultValues?.priority?.toString() as "1" | "2" | "3") || "2",
       description: defaultValues?.description || "",
       assignedTo: defaultValues?.assignedTo || "",
       dueDate: defaultValues?.dueDate || "",
