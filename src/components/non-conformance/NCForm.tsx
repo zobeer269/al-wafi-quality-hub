@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -155,7 +154,7 @@ const NCForm: React.FC<NCFormProps> = ({ initialData, isEditing = false }) => {
         result = await createNonConformance({
           title: ncData.title,
           description: ncData.description,
-          severity: ncData.severity,
+          severity: ncData.severity as NonConformanceSeverity,
           source: ncData.source,
           linked_batch: ncData.linked_batch,
           linked_supplier_id: ncData.linked_supplier_id,

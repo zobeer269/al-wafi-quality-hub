@@ -19,8 +19,8 @@ export interface CAPA {
   capa_type: 'Corrective' | 'Preventive' | 'Both';
   priority: 'Low' | 'Medium' | 'High';
   status: string;
-  linked_nc_id?: string;
-  linked_audit_finding_id?: string;
+  linked_nc_id?: string;       // Added this field
+  linked_audit_finding_id?: string;  // Added this field
 }
 
 /**
@@ -74,6 +74,62 @@ export async function getOpenCAPAs(): Promise<CAPA[]> {
   } catch (error) {
     console.error('Exception fetching open CAPAs:', error);
     return [];
+  }
+}
+
+/**
+ * Get a specific CAPA by ID
+ */
+export async function getCAPAById(id: string): Promise<CAPA | null> {
+  try {
+    const { data, error } = await supabase
+      .from('capas')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      console.error('Error fetching CAPA by ID:', error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      number: data.number,
+      title: data.title || `CAPA ${data.number}`,
+      description: data.description,
+      capa_type: data.capa_type,
+      priority: mapPriorityToLevel(data.priority),
+      status: data.status,
+      linked_nc_id: data.linked_nc_id,
+      linked_audit_finding_id: data.linked_audit_finding_id,
+    };
+  } catch (error) {
+    console.error('Exception fetching CAPA by ID:', error);
+    return null;
+  }
+}
+
+/**
+ * Get a specific Audit Finding by ID
+ */
+export async function getAuditFindingById(id: string): Promise<AuditFinding | null> {
+  try {
+    const { data, error } = await supabase
+      .from('audit_findings')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      console.error('Error fetching Audit Finding by ID:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Exception fetching Audit Finding by ID:', error);
+    return null;
   }
 }
 

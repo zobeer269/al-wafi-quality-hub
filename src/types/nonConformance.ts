@@ -20,7 +20,7 @@ export interface NonConformance {
   linked_batch?: string;
   linked_supplier_id?: string;
   linked_capa_id?: string;
-  linked_audit_finding_id?: string;
+  linked_audit_finding_id?: string;  // Added this field
   root_cause?: string;
   immediate_action?: string;
   final_action?: string;
