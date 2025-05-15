@@ -19,8 +19,8 @@ export interface CAPA {
   capa_type: 'Corrective' | 'Preventive' | 'Both';
   priority: 'Low' | 'Medium' | 'High';
   status: string;
-  linked_nc_id?: string;       // Added this field
-  linked_audit_finding_id?: string;  // Added this field
+  linked_nc_id?: string;
+  linked_audit_finding_id?: string;
 }
 
 /**

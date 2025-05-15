@@ -181,6 +181,7 @@ export type Database = {
           effectiveness_check_required: boolean | null
           effectiveness_verified: boolean | null
           id: string
+          linked_nc_id: string | null
           number: string
           priority: number
           root_cause: string | null
@@ -200,6 +201,7 @@ export type Database = {
           effectiveness_check_required?: boolean | null
           effectiveness_verified?: boolean | null
           id?: string
+          linked_nc_id?: string | null
           number: string
           priority?: number
           root_cause?: string | null
@@ -219,6 +221,7 @@ export type Database = {
           effectiveness_check_required?: boolean | null
           effectiveness_verified?: boolean | null
           id?: string
+          linked_nc_id?: string | null
           number?: string
           priority?: number
           root_cause?: string | null
@@ -226,7 +229,15 @@ export type Database = {
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "capas_linked_nc_id_fkey"
+            columns: ["linked_nc_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       changes: {
         Row: {

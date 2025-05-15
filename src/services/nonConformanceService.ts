@@ -1,13 +1,31 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { 
   NonConformance, 
   NonConformanceAttachment, 
   NonConformanceFilters, 
   NonConformanceSummary,
-  NonConformanceStatus 
+  NonConformanceStatus, 
+  NonConformanceSeverity 
 } from "@/types/nonConformance";
 import { toast } from "@/hooks/use-toast";
+
+export interface CreateNonConformanceData {
+  title: string;
+  description: string;
+  severity: NonConformanceSeverity;
+  source?: string;
+  status?: NonConformanceStatus;
+  linked_batch?: string;
+  linked_supplier_id?: string;
+  linked_capa_id?: string;
+  linked_audit_finding_id?: string;  // Added this field
+  root_cause?: string;
+  immediate_action?: string;
+  reported_by: string;
+  assigned_to?: string;
+  due_date?: string;
+  capa_required?: boolean;
+}
 
 export async function getNonConformances(filters?: NonConformanceFilters): Promise<NonConformance[]> {
   try {
@@ -84,19 +102,7 @@ export async function getNonConformanceById(id: string): Promise<NonConformance 
   }
 }
 
-export async function createNonConformance(nonConformance: {
-  title: string;
-  description: string;
-  source?: string;
-  severity: string;
-  linked_batch?: string;
-  linked_supplier_id?: string;
-  linked_capa_id?: string;
-  immediate_action?: string;
-  reported_by: string;
-  assigned_to?: string;
-  due_date?: string;
-}): Promise<NonConformance | null> {
+export async function createNonConformance(nonConformance: CreateNonConformanceData): Promise<NonConformance | null> {
   try {
     // We need to explicitly cast using 'as any' to bypass TypeScript's strict checking
     // because Supabase's database trigger generates the nc_number
