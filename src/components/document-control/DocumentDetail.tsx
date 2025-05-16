@@ -1,10 +1,14 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Document, DocumentStatus } from '@/types/document';
-import { Clock, Download, FileText, User } from 'lucide-react';
+import { Document, DocumentStatus, ApprovalStatus } from '@/types/document';
+import { Clock, Download, FileText, User, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
 import { updateDocumentStatus } from '@/services/documentService';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
+import SignatureDialog from '@/components/signatures/SignatureDialog';
+import { getUserName } from '@/services/capaService';
 
 interface DocumentDetailProps {
   document: Document;
@@ -17,9 +21,139 @@ const DocumentDetail: React.FC<DocumentDetailProps> = ({
   onClose,
   onStatusChange
 }) => {
+  const [canApprove, setCanApprove] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [approverName, setApproverName] = useState<string | null>(null);
+  const [signatureDialog, setSignatureDialog] = useState<{
+    open: boolean;
+    action: ApprovalStatus;
+  }>({ open: false, action: "Approved" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Check if current user has approval permissions
+    const checkUserPermissions = async () => {
+      const { data, error } = await supabase.rpc('can_approve');
+      if (!error && data) {
+        setCanApprove(data);
+      }
+      
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user?.id || null);
+    };
+    
+    // Get approver name if available
+    const getApproverDetails = async () => {
+      if (document.approved_by) {
+        const name = await getUserName(document.approved_by);
+        setApproverName(name);
+      }
+    };
+    
+    checkUserPermissions();
+    getApproverDetails();
+  }, [document.approved_by]);
+
   const handleStatusChange = async (status: DocumentStatus) => {
     await updateDocumentStatus(document.id, status);
     onStatusChange();
+  };
+
+  const openApprovalDialog = (action: ApprovalStatus) => {
+    setSignatureDialog({ open: true, action });
+  };
+
+  const handleApprovalAction = async (password: string, reason?: string) => {
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "User identification failed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Verify password (simplified for demo)
+      const { error } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email || '',
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Authentication Failed",
+          description: "Incorrect password. Please try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create signature and update document
+      const timestamp = new Date().toISOString();
+      const signatureData = `${currentUser}-document-${document.id}-${timestamp}`;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(signatureData);
+      
+      // Generate a signature hash
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      // Store the signature
+      const { data: signature, error: sigError } = await supabase
+        .from('signatures')
+        .insert({
+          user_id: currentUser,
+          action: `Document ${signatureDialog.action.toLowerCase()}`,
+          module: "Document",
+          reference_id: document.id,
+          signature_hash: hashHex,
+          reason: reason || null,
+        })
+        .select()
+        .single();
+        
+      if (sigError) {
+        throw sigError;
+      }
+      
+      // Update document approval status
+      const { error: updateError } = await supabase
+        .from("documents")
+        .update({
+          approval_status: signatureDialog.action,
+          approved_by: currentUser,
+          approved_at: timestamp,
+          // If approved, also update the document status
+          ...(signatureDialog.action === "Approved" ? { status: "Approved" } : {})
+        })
+        .eq("id", document.id);
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
+      setSignatureDialog({ ...signatureDialog, open: false });
+      toast({
+        title: "Success",
+        description: `Document ${signatureDialog.action.toLowerCase()} successfully`,
+      });
+      onStatusChange();
+      
+    } catch (error) {
+      console.error("Error in approval process:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete approval process",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Format status badge class
@@ -38,6 +172,49 @@ const DocumentDetail: React.FC<DocumentDetailProps> = ({
     }
   };
 
+  // Format approval status badge
+  const getApprovalBadge = () => {
+    if (!document.approval_status) return null;
+    
+    switch(document.approval_status) {
+      case "Approved":
+        return (
+          <div className="flex flex-col mt-2">
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center">
+              <ThumbsUp className="h-3 w-3 mr-1" />
+              Approved
+            </span>
+            {approverName && document.approved_at && (
+              <span className="text-xs text-gray-500 mt-1">
+                by {approverName} on {new Date(document.approved_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        );
+      case "Rejected":
+        return (
+          <div className="flex flex-col mt-2">
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center">
+              <ThumbsDown className="h-3 w-3 mr-1" />
+              Rejected
+            </span>
+            {approverName && document.approved_at && (
+              <span className="text-xs text-gray-500 mt-1">
+                by {approverName} on {new Date(document.approved_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        );
+      default:
+        return (
+          <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 flex items-center mt-2">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Pending Approval
+          </span>
+        );
+    }
+  };
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader className="pb-2">
@@ -46,10 +223,11 @@ const DocumentDetail: React.FC<DocumentDetailProps> = ({
             <div className="text-sm font-medium text-gray-500">{document.number}</div>
             <CardTitle className="text-xl mt-1">{document.title}</CardTitle>
           </div>
-          <div>
+          <div className="flex flex-col">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(document.status)}`}>
               {document.status}
             </span>
+            {getApprovalBadge()}
           </div>
         </div>
       </CardHeader>
@@ -87,16 +265,30 @@ const DocumentDetail: React.FC<DocumentDetailProps> = ({
                 Submit for Review
               </Button>
             )}
-            {document.status === 'In Review' && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
-                onClick={() => handleStatusChange('Approved')}
-              >
-                Approve
-              </Button>
+            
+            {document.status === 'In Review' && canApprove && (
+              <div className="space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+                  onClick={() => openApprovalDialog("Approved")}
+                >
+                  <ThumbsUp className="h-4 w-4 mr-1" />
+                  Approve
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
+                  onClick={() => openApprovalDialog("Rejected")}
+                >
+                  <ThumbsDown className="h-4 w-4 mr-1" />
+                  Reject
+                </Button>
+              </div>
             )}
+            
             {document.status === 'Approved' && (
               <Button 
                 variant="outline" 
@@ -119,6 +311,16 @@ const DocumentDetail: React.FC<DocumentDetailProps> = ({
           </div>
         </div>
       </CardFooter>
+
+      {/* Digital Signature Dialog */}
+      <SignatureDialog
+        open={signatureDialog.open}
+        onClose={() => setSignatureDialog({ ...signatureDialog, open: false })}
+        onConfirm={handleApprovalAction}
+        title={signatureDialog.action === "Approved" ? "Approve Document" : "Reject Document"}
+        action={signatureDialog.action}
+        loading={isSubmitting}
+      />
     </Card>
   );
 };

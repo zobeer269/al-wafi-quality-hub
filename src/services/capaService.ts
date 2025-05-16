@@ -1,4 +1,4 @@
-import { CAPA, CAPAPriority } from "@/types/document";
+import { CAPA, CAPAPriority, ApprovalStatus } from "@/types/document";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Database } from "@/integrations/supabase/types";
@@ -29,6 +29,9 @@ export const convertToCAPAType = (capa: SupabaseCapa): CAPA => {
     created_by: capa.created_by,
     linked_nc_id: capa.linked_nc_id || undefined,
     linked_audit_finding_id: capa.linked_audit_finding_id || undefined,
+    approval_status: (capa.approval_status as ApprovalStatus) || "Pending",
+    approved_by: capa.approved_by || undefined,
+    approved_at: capa.approved_at || undefined,
   };
 };
 
@@ -48,6 +51,7 @@ export const convertToSupabaseInsert = (capa: Partial<CAPA>, userId: string): Su
     action_plan: capa.action_plan || null,
     linked_nc_id: capa.linked_nc_id || null,
     linked_audit_finding_id: capa.linked_audit_finding_id || null,
+    approval_status: capa.approval_status || "Pending",
   };
 };
 
@@ -69,6 +73,9 @@ export const convertToSupabaseUpdate = (capa: Partial<CAPA>): SupabaseCapaUpdate
     updated_at: new Date().toISOString(),
     linked_nc_id: capa.linked_nc_id,
     linked_audit_finding_id: capa.linked_audit_finding_id,
+    approval_status: capa.approval_status,
+    approved_by: capa.approved_by,
+    approved_at: capa.approved_at ? new Date(capa.approved_at).toISOString() : undefined,
   };
 };
 
@@ -306,3 +313,146 @@ export const getCAPAStatistics = async (): Promise<{
     };
   }
 };
+
+// Create a digital signature for approval or critical actions
+export async function createSignature(data: {
+  userId: string;
+  action: string;
+  module: string;
+  referenceId: string;
+  reason?: string;
+}): Promise<string | null> {
+  try {
+    // Create a hash from user data and timestamp (simple simulation)
+    const timestamp = new Date().toISOString();
+    const signatureData = `${data.userId}-${data.action}-${timestamp}`;
+    const encoder = new TextEncoder();
+    const data2 = encoder.encode(signatureData);
+    
+    // Generate a signature hash (using Web Crypto API)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data2);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // Store the signature in the database
+    const { data: signature, error } = await supabase
+      .from('signatures')
+      .insert({
+        user_id: data.userId,
+        action: data.action,
+        module: data.module,
+        reference_id: data.referenceId,
+        signature_hash: hashHex,
+        reason: data.reason || null,
+        ip_address: window.location.hostname, // Get client IP (simplified for demo)
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error creating signature:", error);
+      throw error;
+    }
+    
+    return signature ? signature.id : null;
+  } catch (error) {
+    console.error("Error in createSignature:", error);
+    toast({
+      title: "Error",
+      description: "Failed to create digital signature",
+      variant: "destructive",
+    });
+    return null;
+  }
+}
+
+// Approve a CAPA with electronic signature
+export async function approveCAPA(
+  capaId: string, 
+  userId: string, 
+  status: ApprovalStatus, 
+  reason?: string
+): Promise<boolean> {
+  try {
+    // First create the signature
+    const signatureId = await createSignature({
+      userId,
+      action: `CAPA ${status.toLowerCase()}`,
+      module: "CAPA",
+      referenceId: capaId,
+      reason
+    });
+    
+    if (!signatureId) {
+      throw new Error("Failed to create signature");
+    }
+    
+    // Now update the CAPA with approval information
+    const { error } = await supabase
+      .from("capas")
+      .update({
+        approval_status: status,
+        approved_by: userId,
+        approved_at: new Date().toISOString(),
+      })
+      .eq("id", capaId);
+      
+    if (error) {
+      console.error("Error approving CAPA:", error);
+      throw error;
+    }
+    
+    toast({
+      title: "Success",
+      description: `CAPA ${status === "Approved" ? "approved" : "rejected"} successfully`,
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error in approveCAPA:", error);
+    toast({
+      title: "Error",
+      description: `Failed to ${status.toLowerCase()} CAPA`,
+      variant: "destructive",
+    });
+    return false;
+  }
+}
+
+// Check if user has approval permissions
+export async function userCanApprove(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('can_approve');
+    
+    if (error) {
+      console.error("Error checking user role:", error);
+      return false;
+    }
+    
+    return data || false;
+  } catch (error) {
+    console.error("Exception checking user role:", error);
+    return false;
+  }
+}
+
+// Get user's name by ID
+export async function getUserName(userId: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single();
+      
+    if (error || !data) {
+      console.error("Error getting user name:", error);
+      return "Unknown User";
+    }
+    
+    return `${data.first_name} ${data.last_name}`.trim() || "Unknown User";
+  } catch (error) {
+    console.error("Exception getting user name:", error);
+    return "Unknown User";
+  }
+}

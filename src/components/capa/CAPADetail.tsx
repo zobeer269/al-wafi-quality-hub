@@ -1,14 +1,15 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CAPA, CAPAStatus, CAPAPriority, priorityLabelMap } from '@/types/document';
-import { Clock, Download, FileText, User, Edit, Check, Save } from 'lucide-react';
-import { updateCAPA } from '@/services/capaService';
+import { CAPA, CAPAStatus, CAPAPriority, ApprovalStatus } from '@/types/document';
+import { Clock, Download, FileText, User, Edit, Check, Save, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
+import { updateCAPA, approveCAPA, userCanApprove, getUserName } from '@/services/capaService';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import SignatureDialog from '@/components/signatures/SignatureDialog';
 
 interface CAPADetailProps {
   capa: CAPA;
@@ -24,6 +25,37 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
   const [rootCause, setRootCause] = useState(capa.root_cause || '');
   const [actionPlan, setActionPlan] = useState(capa.action_plan || '');
   const [effectivenessVerified, setEffectivenessVerified] = useState(capa.effectiveness_verified || false);
+  const [canApprove, setCanApprove] = useState(false);
+  const [approverName, setApproverName] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [signatureDialog, setSignatureDialog] = useState<{
+    open: boolean;
+    action: ApprovalStatus;
+  }>({ open: false, action: "Approved" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  useEffect(() => {
+    // Check if current user has approval permissions
+    const checkUserPermissions = async () => {
+      const userHasApprovalRights = await userCanApprove();
+      setCanApprove(userHasApprovalRights);
+      
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user?.id || null);
+    };
+    
+    // Get approver name if available
+    const getApproverDetails = async () => {
+      if (capa.approved_by) {
+        const name = await getUserName(capa.approved_by);
+        setApproverName(name);
+      }
+    };
+    
+    checkUserPermissions();
+    getApproverDetails();
+  }, [capa.approved_by]);
   
   const handleStatusChange = async (status: CAPAStatus) => {
     try {
@@ -60,6 +92,62 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
     }
   };
 
+  const openApprovalDialog = (action: ApprovalStatus) => {
+    setSignatureDialog({ open: true, action });
+  };
+
+  const handleApprovalAction = async (password: string, reason?: string) => {
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "User identification failed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Verify password (simplified for demo)
+      const { error } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email || '',
+        password,
+      });
+
+      if (error) {
+        toast({
+          title: "Authentication Failed",
+          description: "Incorrect password. Please try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Process approval with digital signature
+      const success = await approveCAPA(
+        capa.id, 
+        currentUser, 
+        signatureDialog.action,
+        reason
+      );
+
+      if (success) {
+        setSignatureDialog({ ...signatureDialog, open: false });
+        onStatusChange();
+      }
+    } catch (error) {
+      console.error("Error in approval process:", error);
+      toast({
+        title: "Error",
+        description: "Failed to complete approval process",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Format status badge class
   const getStatusBadgeClass = (status: CAPAStatus) => {
     switch (status) {
@@ -90,6 +178,47 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
     }
   };
 
+  // Format approval status badge
+  const getApprovalBadge = () => {
+    switch(capa.approval_status) {
+      case "Approved":
+        return (
+          <div className="flex flex-col">
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center">
+              <ThumbsUp className="h-3 w-3 mr-1" />
+              Approved
+            </span>
+            {approverName && capa.approved_at && (
+              <span className="text-xs text-gray-500 mt-1">
+                by {approverName} on {new Date(capa.approved_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        );
+      case "Rejected":
+        return (
+          <div className="flex flex-col">
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center">
+              <ThumbsDown className="h-3 w-3 mr-1" />
+              Rejected
+            </span>
+            {approverName && capa.approved_at && (
+              <span className="text-xs text-gray-500 mt-1">
+                by {approverName} on {new Date(capa.approved_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        );
+      default:
+        return (
+          <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 flex items-center">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Pending Approval
+          </span>
+        );
+    }
+  };
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader className="pb-2">
@@ -98,11 +227,12 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
             <div className="text-sm font-medium text-gray-500">{capa.number}</div>
             <CardTitle className="text-xl mt-1">{capa.title}</CardTitle>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-col space-y-2">
             {getPriorityBadge(capa.priority)}
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(capa.status)}`}>
               {capa.status}
             </span>
+            {getApprovalBadge()}
           </div>
         </div>
       </CardHeader>
@@ -251,6 +381,30 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
           </div>
           
           <div className="space-x-2">
+            {/* Approval buttons - only shown for users with approval permissions */}
+            {canApprove && capa.approval_status === "Pending" && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+                  onClick={() => openApprovalDialog("Approved")}
+                >
+                  <ThumbsUp className="h-4 w-4 mr-1" />
+                  Approve
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
+                  onClick={() => openApprovalDialog("Rejected")}
+                >
+                  <ThumbsDown className="h-4 w-4 mr-1" />
+                  Reject
+                </Button>
+              </>
+            )}
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -272,6 +426,16 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
           </div>
         </div>
       </CardFooter>
+
+      {/* Digital Signature Dialog */}
+      <SignatureDialog
+        open={signatureDialog.open}
+        onClose={() => setSignatureDialog({ ...signatureDialog, open: false })}
+        onConfirm={handleApprovalAction}
+        title={signatureDialog.action === "Approved" ? "Approve CAPA" : "Reject CAPA"}
+        action={signatureDialog.action}
+        loading={isSubmitting}
+      />
     </Card>
   );
 };
