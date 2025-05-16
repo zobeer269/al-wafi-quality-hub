@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Check, Filter, Plus, Search, X } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
@@ -12,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import CAPAList from '@/components/capa/CAPAList';
 import CAPADetail from '@/components/capa/CAPADetail';
 import CAPAForm from '@/components/capa/CAPAForm';
-import { CAPA, CAPAStatus, CAPAType } from '@/types/document';
+import { CAPA, CAPAStatus, CAPAType, CAPAPriority } from '@/types/document';
 import { fetchCAPAs, createCAPA, getCAPAStatistics } from '@/services/capaService';
 
 const CAPAPage: React.FC = () => {
@@ -71,7 +70,7 @@ const CAPAPage: React.FC = () => {
         number: formData.number,
         title: formData.title,
         type: formData.type as CAPAType,
-        priority: parseInt(formData.priority, 10),
+        priority: parseInt(formData.priority, 10) as CAPAPriority,
         description: formData.description,
         assignedTo: formData.assignedTo || undefined,
         dueDate: formData.dueDate || undefined,

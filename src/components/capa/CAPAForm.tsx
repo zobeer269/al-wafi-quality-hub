@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -9,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
-import { CAPAType, CAPAStatus, CAPAPriority } from '@/types/document';
+import { CAPAType, CAPAStatus, CAPAPriority, priorityLabelMap } from '@/types/document';
 
 const formSchema = z.object({
   number: z.string().min(1, { message: "CAPA ID is required" }),
@@ -42,7 +41,7 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
   const today = new Date();
   const defaultCAPANumber = defaultValues?.number || `CAPA-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-${Math.floor(100 + Math.random() * 900)}`;
 
-  const form = useForm<CAPAFormValues>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       number: defaultCAPANumber,
