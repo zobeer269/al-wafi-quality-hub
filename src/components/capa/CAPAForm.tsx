@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
 import { CAPAType, CAPAStatus, CAPAPriority, priorityLabelMap } from '@/types/document';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { suggestCAPAPriority, generateSmartTags } from '@/utils/aiHelpers';
+import { NonConformanceSeverity } from '@/types/nonConformance';
 
 const formSchema = z.object({
   number: z.string().min(1, { message: "CAPA ID is required" }),
@@ -20,6 +26,9 @@ const formSchema = z.object({
   dueDate: z.string().optional(),
   linked_nc_id: z.string().optional(),
   linked_audit_finding_id: z.string().optional(),
+  source: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  ai_notes: z.string().optional(),
 });
 
 type CAPAFormValues = z.infer<typeof formSchema>;
@@ -29,18 +38,28 @@ interface CAPAFormProps {
   onCancel: () => void;
   defaultValues?: Partial<CAPAFormValues>;
   isLoading?: boolean;
+  linkedNC?: {
+    severity?: NonConformanceSeverity;
+    source?: string;
+    description?: string;
+  };
 }
 
 const CAPAForm: React.FC<CAPAFormProps> = ({ 
   onSubmit, 
   onCancel, 
   defaultValues,
-  isLoading = false
+  isLoading = false,
+  linkedNC
 }) => {
   // Generate a default CAPA number if not provided
   const today = new Date();
   const defaultCAPANumber = defaultValues?.number || `CAPA-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-${Math.floor(100 + Math.random() * 900)}`;
-
+  
+  // AI suggestion state
+  const [aiSuggestion, setAiSuggestion] = useState<{ priority: CAPAPriority; reason: string } | null>(null);
+  const [generatedTags, setGeneratedTags] = useState<string[]>([]);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,11 +72,47 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
       dueDate: defaultValues?.dueDate || "",
       linked_nc_id: defaultValues?.linked_nc_id || "",
       linked_audit_finding_id: defaultValues?.linked_audit_finding_id || "",
+      source: defaultValues?.source || linkedNC?.source || "",
+      tags: defaultValues?.tags || [],
+      ai_notes: defaultValues?.ai_notes || "",
     }
   });
 
+  // Get AI suggestions when description or severity changes
+  useEffect(() => {
+    const description = form.watch('description');
+    const source = linkedNC?.source || form.watch('source');
+    
+    if (description && description.length > 10) {
+      // Get priority suggestion
+      const suggestion = suggestCAPAPriority(
+        source, 
+        linkedNC?.severity, 
+        description
+      );
+      setAiSuggestion(suggestion);
+      
+      // Set the suggested priority if it's different from current
+      if (suggestion && suggestion.priority.toString() !== form.getValues('priority')) {
+        form.setValue('priority', suggestion.priority.toString() as "1" | "2" | "3");
+      }
+      
+      // Generate tags
+      const tags = generateSmartTags(description, linkedNC?.severity, source);
+      setGeneratedTags(tags);
+      form.setValue('tags', tags);
+      
+      // Set AI notes
+      form.setValue('ai_notes', `Priority suggestion: ${suggestion.reason}\nDetected themes: ${tags.join(', ')}`);
+    }
+  }, [form.watch('description'), linkedNC?.severity, linkedNC?.source]);
+
   const handleSubmit = (values: CAPAFormValues) => {
-    onSubmit(values);
+    onSubmit({
+      ...values,
+      priority: values.priority,
+      tags: generatedTags,
+    });
   };
 
   return (
@@ -123,7 +178,7 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Priority</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select priority" />
@@ -135,6 +190,11 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
                     <SelectItem value="3">High</SelectItem>
                   </SelectContent>
                 </Select>
+                {aiSuggestion && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    AI suggests: {priorityLabelMap[aiSuggestion.priority]} – {aiSuggestion.reason}
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -157,6 +217,35 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
         
         <FormField
           control={form.control}
+          name="source"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Source</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value || (linkedNC?.source || "")}
+                disabled={!!linkedNC?.source}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Audit">Audit</SelectItem>
+                  <SelectItem value="Customer Complaint">Customer Complaint</SelectItem>
+                  <SelectItem value="Internal">Internal</SelectItem>
+                  <SelectItem value="Supplier">Supplier</SelectItem>
+                  <SelectItem value="Regulatory">Regulatory</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
@@ -172,6 +261,30 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
             </FormItem>
           )}
         />
+        
+        {generatedTags.length > 0 && (
+          <div>
+            <label className="text-sm font-medium">AI-Generated Tags</label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {generatedTags.map((tag, index) => (
+                <Badge key={index} variant="secondary">{tag}</Badge>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {aiSuggestion && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>AI Analysis</AlertTitle>
+            <AlertDescription>
+              {aiSuggestion.reason}
+              {linkedNC?.severity && (
+                <div className="mt-1">Based on {linkedNC.severity} severity from linked Non-Conformance</div>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
         
         <FormField
           control={form.control}
@@ -190,9 +303,11 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
           )}
         />
         
-        {/* Hidden fields for linked items */}
+        {/* Hidden fields for linked items and AI data */}
         <input type="hidden" {...form.register("linked_nc_id")} />
         <input type="hidden" {...form.register("linked_audit_finding_id")} />
+        <input type="hidden" {...form.register("tags")} />
+        <input type="hidden" {...form.register("ai_notes")} />
         
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>

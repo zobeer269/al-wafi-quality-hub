@@ -48,6 +48,8 @@ export interface CAPA {
   approval_status?: ApprovalStatus;
   approved_by?: string;
   approved_at?: string;
+  tags?: string[]; // New field for AI tags
+  ai_notes?: string; // New field for AI-generated notes
 }
 
 export interface Signature {

@@ -8,6 +8,7 @@ import type {
   NonConformanceSeverity 
 } from "@/types/nonConformance";
 import { toast } from "@/hooks/use-toast";
+import { generateSmartTags, generateAINotes } from "@/utils/aiHelpers";
 
 export interface CreateNonConformanceData {
   title: string;
@@ -18,13 +19,15 @@ export interface CreateNonConformanceData {
   linked_batch?: string;
   linked_supplier_id?: string;
   linked_capa_id?: string;
-  linked_audit_finding_id?: string;  // Added this field
+  linked_audit_finding_id?: string;
   root_cause?: string;
   immediate_action?: string;
   reported_by: string;
   assigned_to?: string;
   due_date?: string;
   capa_required?: boolean;
+  tags?: string[];
+  ai_notes?: string;
 }
 
 export async function getNonConformances(filters?: NonConformanceFilters): Promise<NonConformance[]> {
@@ -70,7 +73,16 @@ export async function getNonConformances(filters?: NonConformanceFilters): Promi
       throw new Error(error.message);
     }
 
-    return data as NonConformance[];
+    // Generate tags for any NCs that don't have them yet
+    const result = data.map(nc => {
+      if (!nc.tags && nc.description) {
+        const tags = generateSmartTags(nc.description, nc.severity, nc.source);
+        return { ...nc, tags };
+      }
+      return nc;
+    });
+
+    return result as NonConformance[];
   } catch (error) {
     console.error('Error in getNonConformances:', error);
     return [];
@@ -104,6 +116,27 @@ export async function getNonConformanceById(id: string): Promise<NonConformance 
 
 export async function createNonConformance(nonConformance: CreateNonConformanceData): Promise<NonConformance | null> {
   try {
+    // Generate AI tags and notes if not provided
+    if (!nonConformance.tags) {
+      nonConformance.tags = generateSmartTags(
+        nonConformance.description, 
+        nonConformance.severity, 
+        nonConformance.source
+      );
+    }
+    
+    if (!nonConformance.ai_notes) {
+      nonConformance.ai_notes = generateAINotes({
+        ...nonConformance,
+        id: '',  // Placeholder
+        nc_number: '',  // Placeholder
+        reported_by: nonConformance.reported_by,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: nonConformance.status || 'Open'
+      });
+    }
+    
     // We need to explicitly cast using 'as any' to bypass TypeScript's strict checking
     // because Supabase's database trigger generates the nc_number
     const { data, error } = await supabase
@@ -147,6 +180,23 @@ export async function updateNonConformance(id: string, updates: Partial<NonConfo
     // Map 'Resolved' status (if present) to 'Verification' to match the database enum
     if (updates.status === 'Resolved' as any) {
       updates.status = 'Verification';
+    }
+    
+    // If updating the description, regenerate tags
+    if (updates.description) {
+      const { data: existingData } = await supabase
+        .from('non_conformances')
+        .select('severity, source')
+        .eq('id', id)
+        .single();
+        
+      if (existingData) {
+        updates.tags = generateSmartTags(
+          updates.description, 
+          updates.severity || existingData.severity,
+          updates.source || existingData.source
+        );
+      }
     }
     
     const { data, error } = await supabase
@@ -337,6 +387,101 @@ export async function getNCSources(): Promise<string[]> {
     return [...new Set(data.map(item => item.source).filter(Boolean))];
   } catch (error) {
     console.error('Error in getNCSources:', error);
+    return [];
+  }
+}
+
+// Find similar non-conformances based on description keywords
+export async function findSimilarNonConformances(description: string, limit: number = 5): Promise<NonConformance[]> {
+  try {
+    // Extract key terms from description (simple approach)
+    const keyTerms = description.toLowerCase()
+      .replace(/[^\w\s]/gi, '')
+      .split(' ')
+      .filter(word => word.length > 3)
+      .slice(0, 5);
+      
+    if (keyTerms.length === 0) return [];
+    
+    // Search for similar non-conformances using key terms
+    let query = supabase
+      .from('non_conformances')
+      .select('*');
+      
+    // Build full-text search condition for each term
+    keyTerms.forEach(term => {
+      query = query.or(`description.ilike.%${term}%`);
+    });
+    
+    const { data, error } = await query.limit(limit);
+    
+    if (error) {
+      console.error('Error finding similar non-conformances:', error);
+      return [];
+    }
+    
+    return data as NonConformance[];
+  } catch (error) {
+    console.error('Error in findSimilarNonConformances:', error);
+    return [];
+  }
+}
+
+// Analyze recurring issues
+export async function analyzeRecurringIssues(timeframeDays: number = 180): Promise<{
+  category: string;
+  count: number;
+  severity: string;
+}[]> {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - timeframeDays);
+    
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('source, severity')
+      .gte('created_at', cutoffDate.toISOString());
+      
+    if (error) {
+      console.error('Error analyzing recurring issues:', error);
+      return [];
+    }
+    
+    // Group by source and severity
+    const groupedIssues: Record<string, Record<string, number>> = {};
+    
+    data.forEach(nc => {
+      const source = nc.source || 'Unknown';
+      const severity = nc.severity;
+      
+      if (!groupedIssues[source]) {
+        groupedIssues[source] = {};
+      }
+      
+      if (!groupedIssues[source][severity]) {
+        groupedIssues[source][severity] = 0;
+      }
+      
+      groupedIssues[source][severity]++;
+    });
+    
+    // Format the results
+    const results: { category: string; count: number; severity: string }[] = [];
+    
+    Object.entries(groupedIssues).forEach(([source, severities]) => {
+      Object.entries(severities).forEach(([severity, count]) => {
+        results.push({
+          category: source,
+          count,
+          severity
+        });
+      });
+    });
+    
+    // Sort by count descending
+    return results.sort((a, b) => b.count - a.count);
+  } catch (error) {
+    console.error('Error in analyzeRecurringIssues:', error);
     return [];
   }
 }

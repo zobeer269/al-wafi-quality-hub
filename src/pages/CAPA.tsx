@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Check, Filter, Plus, Search, X } from 'lucide-react';
+import { AlertTriangle, Check, Filter, Plus, Search, X, AlertCircle } from 'lucide-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -13,11 +14,20 @@ import CAPADetail from '@/components/capa/CAPADetail';
 import CAPAForm from '@/components/capa/CAPAForm';
 import { CAPA, CAPAStatus, CAPAType, CAPAPriority } from '@/types/document';
 import { fetchCAPAs, createCAPA, getCAPAStatistics } from '@/services/capaService';
+import { checkOverdueItems, filterByTags } from '@/utils/aiHelpers';
+import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const CAPAPage: React.FC = () => {
   const [capas, setCapas] = useState<CAPA[]>([]);
   const [selectedCAPA, setSelectedCAPA] = useState<CAPA | null>(null);
   const [filterStatus, setFilterStatus] = useState<CAPAStatus | null>(null);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -28,6 +38,8 @@ const CAPAPage: React.FC = () => {
     closed: 0
   });
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [overdueItems, setOverdueItems] = useState<CAPA[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
 
   useEffect(() => {
     loadCAPAs();
@@ -39,6 +51,20 @@ const CAPAPage: React.FC = () => {
     try {
       const data = await fetchCAPAs();
       setCapas(data);
+      
+      // Extract all unique tags
+      const allTags = new Set<string>();
+      data.forEach(capa => {
+        if (capa.tags) {
+          capa.tags.forEach(tag => allTags.add(tag));
+        }
+      });
+      setAvailableTags(Array.from(allTags));
+      
+      // Find overdue items
+      const overdue = checkOverdueItems(data, 10) as CAPA[];
+      setOverdueItems(overdue);
+      
     } catch (error) {
       console.error("Error loading CAPAs:", error);
       toast({
@@ -74,7 +100,10 @@ const CAPAPage: React.FC = () => {
         description: formData.description,
         assignedTo: formData.assignedTo || undefined,
         dueDate: formData.dueDate || undefined,
-        status: "Open" as CAPAStatus
+        status: "Open" as CAPAStatus,
+        tags: formData.tags || [],
+        ai_notes: formData.ai_notes || "",
+        source: formData.source || undefined,
       };
       
       await createCAPA(capaData, userId);
@@ -113,14 +142,29 @@ const CAPAPage: React.FC = () => {
     }
   };
 
-  const filteredCAPAs = capas.filter(capa => {
-    const matchesStatus = filterStatus ? capa.status === filterStatus : true;
-    const matchesSearch = searchTerm 
-      ? capa.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        capa.number.toLowerCase().includes(searchTerm.toLowerCase())
-      : true;
-    return matchesStatus && matchesSearch;
-  });
+  const handleTagSelect = (tag: string) => {
+    setFilterTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag) 
+        : [...prev, tag]
+    );
+  };
+
+  // Filter CAPAs by status, search term, and tags
+  const filteredCAPAs = capas
+    .filter(capa => {
+      const matchesStatus = filterStatus ? capa.status === filterStatus : true;
+      const matchesSearch = searchTerm 
+        ? capa.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+          capa.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (capa.description && capa.description.toLowerCase().includes(searchTerm.toLowerCase()))
+        : true;
+      return matchesStatus && matchesSearch;
+    })
+    .filter(capa => {
+      if (filterTags.length === 0) return true;
+      return filterTags.every(tag => capa.tags?.includes(tag));
+    });
 
   return (
     <DashboardLayout>
@@ -154,6 +198,16 @@ const CAPAPage: React.FC = () => {
               <div className="text-2xl font-bold">{statistics.closed}</div>
             </div>
           </div>
+          
+          {overdueItems.length > 0 && (
+            <Alert className="mt-4 bg-red-50 border-red-200 text-red-800">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertTitle className="text-red-600">Predictive Alert</AlertTitle>
+              <AlertDescription>
+                ⚠️ {overdueItems.length} open {overdueItems.length === 1 ? 'CAPA is' : 'CAPAs are'} overdue by more than 10 days
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
@@ -168,9 +222,72 @@ const CAPAPage: React.FC = () => {
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <h4 className="font-medium mb-2">Filter by AI Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.map((tag, index) => (
+                    <Badge 
+                      key={index} 
+                      variant={filterTags.includes(tag) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => handleTagSelect(tag)}
+                    >
+                      {tag}
+                      {filterTags.includes(tag) && <X className="ml-1 h-3 w-3" />}
+                    </Badge>
+                  ))}
+                </div>
+                {availableTags.length === 0 && (
+                  <div className="text-sm text-gray-500">No tags available</div>
+                )}
+                
+                <div className="pt-4">
+                  <h5 className="font-medium mb-2">Smart Filters</h5>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start text-left"
+                      onClick={() => {
+                        setFilterTags(['supplier-related']);
+                        setFilterStatus('Open');
+                      }}
+                    >
+                      Show open supplier-related CAPAs
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start text-left"
+                      onClick={() => {
+                        setFilterTags(['recurring']);
+                      }}
+                    >
+                      Show recurring deviations
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start text-left"
+                      onClick={() => {
+                        setFilterTags(['critical']);
+                      }}
+                    >
+                      Show critical CAPAs
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex gap-2">
           {filterStatus && (
@@ -178,6 +295,29 @@ const CAPAPage: React.FC = () => {
               {filterStatus} <X className="ml-1 h-4 w-4" />
             </Button>
           )}
+          
+          {filterTags.length > 0 && (
+            <div className="flex gap-1">
+              {filterTags.map((tag, index) => (
+                <Badge key={index} variant="secondary" className="flex items-center">
+                  {tag}
+                  <X 
+                    className="ml-1 h-3 w-3 cursor-pointer" 
+                    onClick={() => setFilterTags(prev => prev.filter(t => t !== tag))}
+                  />
+                </Badge>
+              ))}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2" 
+                onClick={() => setFilterTags([])}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
+          
           <Button className="w-full md:w-auto" onClick={() => setShowForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New CAPA

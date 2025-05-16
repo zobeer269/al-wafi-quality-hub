@@ -20,7 +20,7 @@ export interface NonConformance {
   linked_batch?: string;
   linked_supplier_id?: string;
   linked_capa_id?: string;
-  linked_audit_finding_id?: string;  // Added this field
+  linked_audit_finding_id?: string;
   root_cause?: string;
   immediate_action?: string;
   final_action?: string;
@@ -31,6 +31,8 @@ export interface NonConformance {
   updated_at: string;
   closed_at?: string;
   capa_required?: boolean;
+  tags?: string[]; // New field for AI tags
+  ai_notes?: string; // New field for AI-generated notes
 }
 
 export interface NonConformanceAttachment {
@@ -51,6 +53,7 @@ export interface NonConformanceFilters {
   assignedTo?: string | 'all';
   dateFrom?: string;
   dateTo?: string;
+  tags?: string[]; // New field for filtering by AI tags
 }
 
 export interface NonConformanceSummary {
