@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAPriority, priorityLabelMap } from '@/types/document';
 
