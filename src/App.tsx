@@ -11,6 +11,9 @@ import NCCreatePage from "./pages/nonconformance/NCCreatePage";
 import NCDetailPage from "./pages/nonconformance/NCDetailPage";
 import NCEditPage from "./pages/nonconformance/NCEditPage";
 import CAPA from "./pages/CAPA";
+import Complaints from "./pages/Complaints";
+import ComplaintCreatePage from "./pages/complaints/ComplaintCreatePage";
+import ComplaintDetailPage from "./pages/complaints/ComplaintDetailPage";
 import Audits from "./pages/Audits";
 import Suppliers from "./pages/Suppliers";
 import Risk from "./pages/Risk";
@@ -31,6 +34,9 @@ export function App() {
         <Route path="/non-conformance/:id" element={<NCDetailPage />} />
         <Route path="/non-conformance/:id/edit" element={<NCEditPage />} />
         <Route path="/capa" element={<CAPA />} />
+        <Route path="/complaints" element={<Complaints />} />
+        <Route path="/complaints/create" element={<ComplaintCreatePage />} />
+        <Route path="/complaints/:id" element={<ComplaintDetailPage />} />
         <Route path="/audits" element={<Audits />} />
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/risk" element={<Risk />} />
