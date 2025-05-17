@@ -74,10 +74,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ initialData, isEditing = fals
 
     try {
       if (isEditing && initialData) {
-        await updateProduct(initialData.id, values);
+        await updateProduct(initialData.id, values as Product);
         navigate(`/products/${initialData.id}`);
       } else {
-        const newProduct = await createProduct(values);
+        const newProduct = await createProduct(values as Product);
         if (newProduct) {
           navigate(`/products/${newProduct.id}`);
         }

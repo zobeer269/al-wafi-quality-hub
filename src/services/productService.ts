@@ -1,122 +1,194 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Product, ProductVersion } from "@/types/product";
+import { Product, ProductFilters, ProductVersion } from "@/types/product";
 import { toast } from "@/components/ui/use-toast";
 
-export const fetchProducts = async (filters: Record<string, any> = {}) => {
+// Function to fetch products with optional filters
+export const fetchProducts = async (filters: ProductFilters = {}): Promise<Product[]> => {
   try {
-    let query = supabase.from("products").select("*");
+    let query = supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     // Apply filters if provided
-    if (filters.status && filters.status !== "all") {
-      query = query.eq("status", filters.status);
+    if (filters.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status);
     }
-
-    if (filters.category && filters.category !== "all") {
-      query = query.eq("category", filters.category);
+    
+    if (filters.category && filters.category !== 'all') {
+      query = query.eq('category', filters.category);
     }
-
-    if (filters.manufacturer && filters.manufacturer !== "all") {
-      query = query.eq("manufacturer", filters.manufacturer);
+    
+    if (filters.manufacturer && filters.manufacturer !== 'all') {
+      query = query.eq('manufacturer', filters.manufacturer);
     }
-
+    
     if (filters.dateFrom) {
-      query = query.gte("created_at", filters.dateFrom);
+      query = query.gte('created_at', filters.dateFrom);
     }
-
+    
     if (filters.dateTo) {
-      query = query.lte("created_at", filters.dateTo);
+      query = query.lte('created_at', filters.dateTo);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const { data, error } = await query;
 
     if (error) {
       throw error;
     }
 
-    return data as Product[];
+    return data.map(p => ({
+      id: p.id,
+      sku: p.sku,
+      name: p.name,
+      category: p.category || undefined,
+      description: p.description || undefined,
+      manufacturer: p.manufacturer || undefined,
+      registration_number: p.registration_number || undefined,
+      status: p.status as Product['status'],
+      created_by: p.created_by,
+      created_at: p.created_at,
+      updated_at: p.updated_at,
+    }));
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error('Error fetching products:', error);
     toast({
       title: "Error",
-      description: "Failed to fetch products. Please try again.",
+      description: "Failed to load products. Please try again.",
       variant: "destructive",
     });
     return [];
   }
 };
 
-export const fetchProductById = async (id: string) => {
+// Get unique product categories for filters
+export const getProductCategories = async (): Promise<string[]> => {
   try {
     const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", id)
-      .single();
-
+      .from('products')
+      .select('category')
+      .not('category', 'is', null)
+      .order('category');
+    
     if (error) {
       throw error;
     }
-
-    return data as Product;
+    
+    return [...new Set(data.map(p => p.category).filter(Boolean))];
   } catch (error) {
-    console.error("Error fetching product:", error);
+    console.error('Error fetching product categories:', error);
+    return [];
+  }
+};
+
+// Get unique product manufacturers for filters
+export const getProductManufacturers = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('manufacturer')
+      .not('manufacturer', 'is', null)
+      .order('manufacturer');
+    
+    if (error) {
+      throw error;
+    }
+    
+    return [...new Set(data.map(p => p.manufacturer).filter(Boolean))];
+  } catch (error) {
+    console.error('Error fetching product manufacturers:', error);
+    return [];
+  }
+};
+
+// Fetch a single product by ID
+export const fetchProductById = async (id: string): Promise<Product | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return {
+      id: data.id,
+      sku: data.sku,
+      name: data.name,
+      category: data.category || undefined,
+      description: data.description || undefined,
+      manufacturer: data.manufacturer || undefined,
+      registration_number: data.registration_number || undefined,
+      status: data.status as Product['status'],
+      created_by: data.created_by,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
+  } catch (error) {
+    console.error('Error fetching product:', error);
     toast({
       title: "Error",
-      description: "Failed to fetch product details. Please try again.",
+      description: "Failed to load product details. Please try again.",
       variant: "destructive",
     });
     return null;
   }
 };
 
-export const fetchProductVersions = async (productId: string) => {
+// Create a new product
+export const createProduct = async (productData: Partial<Product>): Promise<Product | null> => {
   try {
-    const { data, error } = await supabase
-      .from("product_versions")
-      .select(`
-        *,
-        documents:linked_sop_id (id, title, number),
-        capas:linked_capa_id (id, title, number)
-      `)
-      .eq("product_id", productId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      throw error;
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData.user) {
+      throw new Error("User not authenticated");
     }
-
-    return data as (ProductVersion & { documents: any; capas: any })[];
-  } catch (error) {
-    console.error("Error fetching product versions:", error);
-    toast({
-      title: "Error",
-      description: "Failed to fetch product versions. Please try again.",
-      variant: "destructive",
-    });
-    return [];
-  }
-};
-
-export const createProduct = async (product: Omit<Product, "id" | "created_at" | "updated_at" | "created_by">) => {
-  try {
+    
+    const product = {
+      sku: productData.sku!,
+      name: productData.name!,
+      category: productData.category || null,
+      description: productData.description || null,
+      manufacturer: productData.manufacturer || null,
+      registration_number: productData.registration_number || null,
+      status: productData.status || "In Development",
+      created_by: userData.user.id,
+    };
+    
     const { data, error } = await supabase
-      .from("products")
+      .from('products')
       .insert([product])
-      .select();
-
+      .select()
+      .single();
+    
     if (error) {
       throw error;
     }
-
+    
     toast({
       title: "Success",
       description: "Product created successfully.",
     });
-
-    return data[0] as Product;
+    
+    return {
+      id: data.id,
+      sku: data.sku,
+      name: data.name,
+      category: data.category || undefined,
+      description: data.description || undefined,
+      manufacturer: data.manufacturer || undefined,
+      registration_number: data.registration_number || undefined,
+      status: data.status as Product['status'],
+      created_by: data.created_by,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
   } catch (error) {
-    console.error("Error creating product:", error);
+    console.error('Error creating product:', error);
     toast({
       title: "Error",
       description: "Failed to create product. Please try again.",
@@ -126,29 +198,50 @@ export const createProduct = async (product: Omit<Product, "id" | "created_at" |
   }
 };
 
-export const updateProduct = async (id: string, updates: Partial<Product>) => {
+// Update an existing product
+export const updateProduct = async (id: string, productData: Partial<Product>): Promise<Product | null> => {
   try {
+    const updateData = {
+      name: productData.name,
+      category: productData.category,
+      description: productData.description,
+      manufacturer: productData.manufacturer,
+      registration_number: productData.registration_number,
+      status: productData.status,
+      updated_at: new Date().toISOString(),
+    };
+    
     const { data, error } = await supabase
-      .from("products")
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select();
-
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
     if (error) {
       throw error;
     }
-
+    
     toast({
       title: "Success",
       description: "Product updated successfully.",
     });
-
-    return data[0] as Product;
+    
+    return {
+      id: data.id,
+      sku: data.sku,
+      name: data.name,
+      category: data.category || undefined,
+      description: data.description || undefined,
+      manufacturer: data.manufacturer || undefined,
+      registration_number: data.registration_number || undefined,
+      status: data.status as Product['status'],
+      created_by: data.created_by,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
   } catch (error) {
-    console.error("Error updating product:", error);
+    console.error('Error updating product:', error);
     toast({
       title: "Error",
       description: "Failed to update product. Please try again.",
@@ -158,27 +251,108 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
   }
 };
 
-export const createProductVersion = async (
-  productVersion: Omit<ProductVersion, "id" | "created_at" | "created_by">
-) => {
+// Fetch product versions
+export const fetchProductVersions = async (productId: string): Promise<ProductVersion[]> => {
   try {
-    const { data, error } = await supabase
-      .from("product_versions")
-      .insert([productVersion])
-      .select();
-
+    let query = supabase
+      .from('product_versions')
+      .select(`
+        *,
+        documents:linked_sop_id (number, title),
+        capas:linked_capa_id (number, title)
+      `)
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false });
+    
+    const { data, error } = await query;
+    
     if (error) {
       throw error;
     }
+    
+    return data.map(v => ({
+      id: v.id,
+      product_id: v.product_id,
+      version: v.version,
+      changes_summary: v.changes_summary || undefined,
+      effective_date: v.effective_date || undefined,
+      status: v.status as ProductVersion['status'],
+      linked_sop_id: v.linked_sop_id || undefined,
+      linked_capa_id: v.linked_capa_id || undefined,
+      created_by: v.created_by,
+      created_at: v.created_at,
+      documents: v.documents,
+      capas: v.capas,
+    }));
+  } catch (error) {
+    console.error('Error fetching product versions:', error);
+    toast({
+      title: "Error",
+      description: "Failed to load product versions. Please try again.",
+      variant: "destructive",
+    });
+    return [];
+  }
+};
 
+// Create a new product version
+export const createProductVersion = async (versionData: Partial<ProductVersion>): Promise<ProductVersion | null> => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData.user) {
+      throw new Error("User not authenticated");
+    }
+    
+    const version = {
+      product_id: versionData.product_id!,
+      version: versionData.version!,
+      changes_summary: versionData.changes_summary || null,
+      effective_date: versionData.effective_date || null,
+      status: versionData.status || "Draft",
+      linked_sop_id: versionData.linked_sop_id || null,
+      linked_capa_id: versionData.linked_capa_id || null,
+      created_by: userData.user.id,
+    };
+    
+    // If status is Active, check if there are other active versions and update them
+    if (version.status === "Active") {
+      await supabase
+        .from('product_versions')
+        .update({ status: "Retired" })
+        .eq('product_id', version.product_id)
+        .eq('status', "Active");
+    }
+    
+    const { data, error } = await supabase
+      .from('product_versions')
+      .insert([version])
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
     toast({
       title: "Success",
       description: "Product version created successfully.",
     });
-
-    return data[0] as ProductVersion;
+    
+    return {
+      id: data.id,
+      product_id: data.product_id,
+      version: data.version,
+      changes_summary: data.changes_summary || undefined,
+      effective_date: data.effective_date || undefined,
+      status: data.status as ProductVersion['status'],
+      linked_sop_id: data.linked_sop_id || undefined,
+      linked_capa_id: data.linked_capa_id || undefined,
+      created_by: data.created_by,
+      created_at: data.created_at,
+    };
   } catch (error) {
-    console.error("Error creating product version:", error);
+    console.error('Error creating product version:', error);
     toast({
       title: "Error",
       description: "Failed to create product version. Please try again.",
@@ -188,67 +362,71 @@ export const createProductVersion = async (
   }
 };
 
-export const updateProductVersion = async (id: string, updates: Partial<ProductVersion>) => {
+// Update an existing product version
+export const updateProductVersion = async (id: string, versionData: Partial<ProductVersion>): Promise<ProductVersion | null> => {
   try {
+    const updateData = {
+      version: versionData.version,
+      changes_summary: versionData.changes_summary,
+      effective_date: versionData.effective_date,
+      status: versionData.status,
+      linked_sop_id: versionData.linked_sop_id,
+      linked_capa_id: versionData.linked_capa_id,
+    };
+    
+    // If status is Active, check if there are other active versions and update them
+    if (updateData.status === "Active") {
+      const { data: versionInfo } = await supabase
+        .from('product_versions')
+        .select('product_id')
+        .eq('id', id)
+        .single();
+        
+      if (versionInfo) {
+        await supabase
+          .from('product_versions')
+          .update({ status: "Retired" })
+          .eq('product_id', versionInfo.product_id)
+          .eq('status', "Active")
+          .neq('id', id);
+      }
+    }
+    
     const { data, error } = await supabase
-      .from("product_versions")
-      .update(updates)
-      .eq("id", id)
-      .select();
-
+      .from('product_versions')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
     if (error) {
       throw error;
     }
-
+    
     toast({
       title: "Success",
       description: "Product version updated successfully.",
     });
-
-    return data[0] as ProductVersion;
+    
+    return {
+      id: data.id,
+      product_id: data.product_id,
+      version: data.version,
+      changes_summary: data.changes_summary || undefined,
+      effective_date: data.effective_date || undefined,
+      status: data.status as ProductVersion['status'],
+      linked_sop_id: data.linked_sop_id || undefined,
+      linked_capa_id: data.linked_capa_id || undefined,
+      created_by: data.created_by,
+      created_at: data.created_at,
+    };
   } catch (error) {
-    console.error("Error updating product version:", error);
+    console.error('Error updating product version:', error);
     toast({
       title: "Error",
       description: "Failed to update product version. Please try again.",
       variant: "destructive",
     });
     return null;
-  }
-};
-
-export const getProductCategories = async () => {
-  try {
-    const { data, error } = await supabase
-      .from("products")
-      .select("category")
-      .not("category", "is", null);
-
-    if (error) {
-      throw error;
-    }
-
-    return [...new Set(data.map((item) => item.category).filter(Boolean))];
-  } catch (error) {
-    console.error("Error fetching product categories:", error);
-    return [];
-  }
-};
-
-export const getProductManufacturers = async () => {
-  try {
-    const { data, error } = await supabase
-      .from("products")
-      .select("manufacturer")
-      .not("manufacturer", "is", null);
-
-    if (error) {
-      throw error;
-    }
-
-    return [...new Set(data.map((item) => item.manufacturer).filter(Boolean))];
-  } catch (error) {
-    console.error("Error fetching product manufacturers:", error);
-    return [];
   }
 };

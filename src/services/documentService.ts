@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Document, DocumentStatus, ApprovalStatus } from "@/types/document";
 import { toast } from "@/components/ui/use-toast";

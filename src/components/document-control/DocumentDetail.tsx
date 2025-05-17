@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Document, DocumentStatus, ApprovalStatus } from '@/types/document';
 import { Clock, Download, FileText, User, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
-import { updateDocumentStatus } from '@/services/documentService';
+import { updateDocumentStatus, approveDocument } from '@/services/documentService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import SignatureDialog from '@/components/signatures/SignatureDialog';
@@ -33,7 +32,7 @@ const DocumentDetail: React.FC<DocumentDetailProps> = ({
   useEffect(() => {
     // Check if current user has approval permissions
     const checkUserPermissions = async () => {
-      const { data, error } = await supabase.rpc('can_approve');
+      const { data, error } = await supabase.rpc('can_approve_products');
       if (!error && data) {
         setCanApprove(data);
       }
@@ -92,58 +91,22 @@ const DocumentDetail: React.FC<DocumentDetailProps> = ({
         return;
       }
 
-      // Create signature and update document
-      const timestamp = new Date().toISOString();
-      const signatureData = `${currentUser}-document-${document.id}-${timestamp}`;
-      const encoder = new TextEncoder();
-      const data = encoder.encode(signatureData);
-      
-      // Generate a signature hash
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      
-      // Store the signature
-      const { data: signature, error: sigError } = await supabase
-        .from('signatures')
-        .insert({
-          user_id: currentUser,
-          action: `Document ${signatureDialog.action.toLowerCase()}`,
-          module: "Document",
-          reference_id: document.id,
-          signature_hash: hashHex,
-          reason: reason || null,
-        })
-        .select()
-        .single();
-        
-      if (sigError) {
-        throw sigError;
+      // Use approveDocument service function
+      const success = await approveDocument(
+        document.id,
+        currentUser,
+        signatureDialog.action,
+        reason
+      );
+
+      if (success) {
+        setSignatureDialog({ ...signatureDialog, open: false });
+        toast({
+          title: "Success",
+          description: `Document ${signatureDialog.action.toLowerCase()} successfully`,
+        });
+        onStatusChange();
       }
-      
-      // Update document approval status
-      const { error: updateError } = await supabase
-        .from("documents")
-        .update({
-          approval_status: signatureDialog.action,
-          approved_by: currentUser,
-          approved_at: timestamp,
-          // If approved, also update the document status
-          ...(signatureDialog.action === "Approved" ? { status: "Approved" } : {})
-        })
-        .eq("id", document.id);
-        
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setSignatureDialog({ ...signatureDialog, open: false });
-      toast({
-        title: "Success",
-        description: `Document ${signatureDialog.action.toLowerCase()} successfully`,
-      });
-      onStatusChange();
-      
     } catch (error) {
       console.error("Error in approval process:", error);
       toast({

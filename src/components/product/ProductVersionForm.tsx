@@ -40,8 +40,8 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductVersion } from "@/types/product";
 import { createProductVersion, updateProductVersion } from "@/services/productService";
-import { fetchCAPAs } from "@/services/capaService";
 import { fetchDocuments } from "@/services/documentService";
+import { fetchCAPAs } from "@/services/capaService";
 import { CAPA } from "@/types/document";
 import { Document } from "@/types/document";
 
@@ -80,11 +80,11 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
   useEffect(() => {
     const loadReferences = async () => {
       // Load SOPs (filtered for documents of type SOP)
-      const docsData = await fetchDocuments({ type: "SOP" });
+      const docsData = await fetchDocuments();
       setDocuments(docsData);
       
       // Load CAPAs
-      const capasData = await fetchCAPAs({});
+      const capasData = await fetchCAPAs();
       setCapas(capasData);
     };
     
@@ -113,12 +113,13 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
         ...values,
         product_id: productId,
         effective_date: values.effective_date ? values.effective_date.toISOString() : undefined,
+        status: values.status,
       };
       
       if (isEditing && initialData) {
-        await updateProductVersion(initialData.id, versionData);
+        await updateProductVersion(initialData.id, versionData as ProductVersion);
       } else {
-        await createProductVersion(versionData);
+        await createProductVersion(versionData as ProductVersion);
       }
       
       if (onSuccess) {
