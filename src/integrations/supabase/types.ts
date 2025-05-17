@@ -563,6 +563,109 @@ export type Database = {
         }
         Relationships: []
       }
+      product_versions: {
+        Row: {
+          changes_summary: string | null
+          created_at: string | null
+          created_by: string
+          effective_date: string | null
+          id: string
+          linked_capa_id: string | null
+          linked_sop_id: string | null
+          product_id: string
+          status: string
+          version: string
+        }
+        Insert: {
+          changes_summary?: string | null
+          created_at?: string | null
+          created_by: string
+          effective_date?: string | null
+          id?: string
+          linked_capa_id?: string | null
+          linked_sop_id?: string | null
+          product_id: string
+          status?: string
+          version: string
+        }
+        Update: {
+          changes_summary?: string | null
+          created_at?: string | null
+          created_by?: string
+          effective_date?: string | null
+          id?: string
+          linked_capa_id?: string | null
+          linked_sop_id?: string | null
+          product_id?: string
+          status?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_versions_linked_capa_id_fkey"
+            columns: ["linked_capa_id"]
+            isOneToOne: false
+            referencedRelation: "capas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_versions_linked_sop_id_fkey"
+            columns: ["linked_sop_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_versions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          manufacturer: string | null
+          name: string
+          registration_number: string | null
+          sku: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          manufacturer?: string | null
+          name: string
+          registration_number?: string | null
+          sku: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          manufacturer?: string | null
+          name?: string
+          registration_number?: string | null
+          sku?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -946,6 +1049,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_approve_products: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       has_role: {
         Args: {
           requested_user_id: string

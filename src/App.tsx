@@ -16,6 +16,9 @@ import NCDetailPage from "./pages/nonconformance/NCDetailPage";
 import NCCreatePage from "./pages/nonconformance/NCCreatePage";
 import NCEditPage from "./pages/nonconformance/NCEditPage";
 import Change from "./pages/Change";
+import Products from "./pages/Products";
+import ProductDetailPage from "./pages/product/ProductDetailPage";
+import ProductCreatePage from "./pages/product/ProductCreatePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +43,9 @@ function App() {
             <Route path="/nonconformance/create" element={<NCCreatePage />} />
             <Route path="/nonconformance/edit/:id" element={<NCEditPage />} />
             <Route path="/change" element={<Change />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/products/create" element={<ProductCreatePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
