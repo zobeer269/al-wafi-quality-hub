@@ -747,6 +747,42 @@ export type Database = {
         }
         Relationships: []
       }
+      signatures: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          module: string
+          reason: string | null
+          reference_id: string
+          signature_hash: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          module: string
+          reason?: string | null
+          reference_id: string
+          signature_hash: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          module?: string
+          reason?: string | null
+          reference_id?: string
+          signature_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       supplier_audits: {
         Row: {
           audit_id: string | null

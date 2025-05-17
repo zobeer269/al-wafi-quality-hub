@@ -1,290 +1,398 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Document, DocumentStatus, ApprovalStatus } from '@/types/document';
-import { Clock, Download, FileText, User, ThumbsUp, ThumbsDown, AlertTriangle } from 'lucide-react';
-import { updateDocumentStatus, approveDocument } from '@/services/documentService';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
-import SignatureDialog from '@/components/signatures/SignatureDialog';
-import { getUserName } from '@/services/capaService';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Document, DocumentStatus, ApprovalStatus } from "@/types/document";
+import { fetchDocumentById, updateDocumentStatus, approveDocument } from "@/services/documentService";
+import { formatDate } from "@/lib/utils";
+import { Loader2, PlusCircle, Link as LinkIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DocumentDetailProps {
-  document: Document;
-  onClose: () => void;
-  onStatusChange: () => void;
+  documentId: string;
 }
 
-const DocumentDetail: React.FC<DocumentDetailProps> = ({ 
-  document, 
-  onClose,
-  onStatusChange
-}) => {
+const DocumentDetail: React.FC<DocumentDetailProps> = ({ documentId }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [document, setDocument] = useState<Document | null>(null);
+  const [loading, setLoading] = useState(true);
   const [canApprove, setCanApprove] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [approverName, setApproverName] = useState<string | null>(null);
-  const [signatureDialog, setSignatureDialog] = useState<{
-    open: boolean;
-    action: ApprovalStatus;
-  }>({ open: false, action: "Approved" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [approvalAction, setApprovalAction] = useState<"approve" | "reject">("approve");
+  const [approvalReason, setApprovalReason] = useState("");
+  const [approvalLoading, setApprovalLoading] = useState(false);
 
   useEffect(() => {
-    // Check if current user has approval permissions
-    const checkUserPermissions = async () => {
-      const { data, error } = await supabase.rpc('can_approve_products');
-      if (!error && data) {
-        setCanApprove(data);
+    const loadDocumentData = async () => {
+      setLoading(true);
+      const documentData = await fetchDocumentById(documentId);
+
+      if (documentData) {
+        setDocument(documentData);
       }
       
-      // Get current user ID
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user?.id || null);
-    };
-    
-    // Get approver name if available
-    const getApproverDetails = async () => {
-      if (document.approved_by) {
-        const name = await getUserName(document.approved_by);
-        setApproverName(name);
+      // Check if user can approve documents
+      try {
+        const { data: canApproveData, error: canApproveError } = await supabase.rpc('can_approve_products');
+        
+        if (canApproveError) {
+          console.error('Error checking approval permissions:', canApproveError);
+        } else {
+          setCanApprove(!!canApproveData);
+        }
+      } catch (error) {
+        console.error('Error checking approval permissions:', error);
       }
+      
+      setLoading(false);
     };
+
+    loadDocumentData();
+  }, [documentId]);
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    const documentData = await fetchDocumentById(documentId);
     
-    checkUserPermissions();
-    getApproverDetails();
-  }, [document.approved_by]);
+    if (documentData) {
+      setDocument(documentData);
+    }
+    setLoading(false);
+  };
 
   const handleStatusChange = async (status: DocumentStatus) => {
-    await updateDocumentStatus(document.id, status);
-    onStatusChange();
-  };
-
-  const openApprovalDialog = (action: ApprovalStatus) => {
-    setSignatureDialog({ open: true, action });
-  };
-
-  const handleApprovalAction = async (password: string, reason?: string) => {
-    if (!currentUser) {
-      toast({
-        title: "Error",
-        description: "User identification failed",
-        variant: "destructive",
-      });
-      return;
+    if (!document) return;
+    
+    const success = await updateDocumentStatus(document.id, status);
+    if (success) {
+      handleRefresh();
     }
+  };
 
-    setIsSubmitting(true);
+  const handleApprovalAction = (action: "approve" | "reject") => {
+    setApprovalAction(action);
+    setApprovalDialogOpen(true);
+  };
+
+  const handleApprovalSubmit = async () => {
+    if (!document) return;
+    
+    setApprovalLoading(true);
+    
     try {
-      // Verify password (simplified for demo)
-      const { error } = await supabase.auth.signInWithPassword({
-        email: (await supabase.auth.getUser()).data.user?.email || '',
-        password,
-      });
-
-      if (error) {
+      const user = (await supabase.auth.getUser()).data.user;
+      
+      if (!user) {
         toast({
-          title: "Authentication Failed",
-          description: "Incorrect password. Please try again.",
+          title: "Authentication Error",
+          description: "You must be logged in to perform this action",
           variant: "destructive",
         });
-        setIsSubmitting(false);
         return;
       }
-
-      // Use approveDocument service function
+      
+      const approvalStatus: ApprovalStatus = approvalAction === "approve" ? "Approved" : "Rejected";
+      
       const success = await approveDocument(
         document.id,
-        currentUser,
-        signatureDialog.action,
-        reason
+        user.id,
+        approvalStatus,
+        approvalReason
       );
-
+      
       if (success) {
-        setSignatureDialog({ ...signatureDialog, open: false });
-        toast({
-          title: "Success",
-          description: `Document ${signatureDialog.action.toLowerCase()} successfully`,
-        });
-        onStatusChange();
+        handleRefresh();
+        setApprovalDialogOpen(false);
+        setApprovalReason("");
       }
     } catch (error) {
       console.error("Error in approval process:", error);
       toast({
         title: "Error",
-        description: "Failed to complete approval process",
+        description: `Failed to ${approvalAction} document`,
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setApprovalLoading(false);
     }
   };
 
-  // Format status badge class
-  const getStatusBadgeClass = (status: DocumentStatus) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Draft':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'In Review':
-        return 'bg-blue-100 text-blue-800';
-      case 'Approved':
-        return 'bg-green-100 text-green-800';
-      case 'Obsolete':
-        return 'bg-gray-100 text-gray-800';
+      case "Draft":
+        return <Badge variant="secondary">Draft</Badge>;
+      case "In Review":
+        return <Badge variant="outline">In Review</Badge>;
+      case "Approved":
+        return <Badge variant="default">Approved</Badge>;
+      case "Obsolete":
+        return <Badge variant="destructive">Obsolete</Badge>;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Badge>{status}</Badge>;
     }
   };
 
-  // Format approval status badge
-  const getApprovalBadge = () => {
-    if (!document.approval_status) return null;
-    
-    switch(document.approval_status) {
-      case "Approved":
-        return (
-          <div className="flex flex-col mt-2">
-            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center">
-              <ThumbsUp className="h-3 w-3 mr-1" />
-              Approved
-            </span>
-            {approverName && document.approved_at && (
-              <span className="text-xs text-gray-500 mt-1">
-                by {approverName} on {new Date(document.approved_at).toLocaleDateString()}
-              </span>
-            )}
-          </div>
-        );
-      case "Rejected":
-        return (
-          <div className="flex flex-col mt-2">
-            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center">
-              <ThumbsDown className="h-3 w-3 mr-1" />
-              Rejected
-            </span>
-            {approverName && document.approved_at && (
-              <span className="text-xs text-gray-500 mt-1">
-                by {approverName} on {new Date(document.approved_at).toLocaleDateString()}
-              </span>
-            )}
-          </div>
-        );
-      default:
-        return (
-          <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 flex items-center mt-2">
-            <AlertTriangle className="h-3 w-3 mr-1" />
-            Pending Approval
-          </span>
-        );
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!document) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-xl font-semibold">Document not found</h2>
+        <p className="mt-2 text-muted-foreground">
+          The requested document could not be found.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => navigate("/documents")}
+        >
+          Back to Documents
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <div className="text-sm font-medium text-gray-500">{document.number}</div>
-            <CardTitle className="text-xl mt-1">{document.title}</CardTitle>
+            <CardTitle className="text-2xl">{document.title}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {document.number} • Version {document.version}
+            </p>
           </div>
-          <div className="flex flex-col">
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(document.status)}`}>
-              {document.status}
-            </span>
-            {getApprovalBadge()}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4 pt-2">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <div className="text-sm font-medium text-gray-500">Document Type</div>
-            <div>{document.type}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-sm font-medium text-gray-500">Version</div>
-            <div>{document.version}</div>
-          </div>
-        </div>
-        
-        <div className="space-y-1">
-          <div className="text-sm font-medium text-gray-500">Description</div>
-          <div className="text-gray-700">{document.description || 'No description provided'}</div>
-        </div>
-        
-        <div className="flex items-center text-sm text-gray-500">
-          <Clock className="h-4 w-4 mr-1" />
-          <span>Last updated: {document.lastUpdated}</span>
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-4 pt-4 border-t">
-        <div className="flex justify-between items-center w-full">
-          <div className="space-x-2">
-            {document.status === 'Draft' && (
+          <div className="flex space-x-2">
+            {document.status === "Draft" && (
               <Button 
                 variant="outline" 
-                size="sm"
-                onClick={() => handleStatusChange('In Review')}
+                onClick={() => handleStatusChange("In Review")}
               >
                 Submit for Review
               </Button>
             )}
             
-            {document.status === 'In Review' && canApprove && (
-              <div className="space-x-2">
+            {document.status === "In Review" && canApprove && (
+              <>
                 <Button 
                   variant="outline" 
-                  size="sm" 
-                  className="bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
-                  onClick={() => openApprovalDialog("Approved")}
+                  onClick={() => handleApprovalAction("reject")}
                 >
-                  <ThumbsUp className="h-4 w-4 mr-1" />
-                  Approve
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
-                  onClick={() => openApprovalDialog("Rejected")}
-                >
-                  <ThumbsDown className="h-4 w-4 mr-1" />
                   Reject
                 </Button>
-              </div>
+                <Button 
+                  onClick={() => handleApprovalAction("approve")}
+                >
+                  Approve
+                </Button>
+              </>
             )}
             
-            {document.status === 'Approved' && (
+            {document.status === "Approved" && (
               <Button 
                 variant="outline" 
-                size="sm"
-                className="bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-800"
-                onClick={() => handleStatusChange('Obsolete')}
+                onClick={() => handleStatusChange("Obsolete")}
               >
                 Mark as Obsolete
               </Button>
             )}
           </div>
-          <div className="space-x-2">
-            {document.content_url && (
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-            )}
-            <Button onClick={onClose}>Close</Button>
-          </div>
-        </div>
-      </CardFooter>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Status</h3>
+                <div className="mt-1">{getStatusBadge(document.status)}</div>
+              </div>
 
-      {/* Digital Signature Dialog */}
-      <SignatureDialog
-        open={signatureDialog.open}
-        onClose={() => setSignatureDialog({ ...signatureDialog, open: false })}
-        onConfirm={handleApprovalAction}
-        title={signatureDialog.action === "Approved" ? "Approve Document" : "Reject Document"}
-        action={signatureDialog.action}
-        loading={isSubmitting}
-      />
-    </Card>
+              <div>
+                <h3 className="text-sm font-medium">Document Type</h3>
+                <p className="mt-1">{document.type}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Description</h3>
+                <p className="mt-1">{document.description || "-"}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium">Last Updated</h3>
+                <p className="mt-1">{formatDate(document.lastUpdated)}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Approved By</h3>
+                <p className="mt-1">{document.approved_by || "-"}</p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium">Document Link</h3>
+                <div className="mt-1">
+                  {document.content_url ? (
+                    <a 
+                      href={document.content_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline flex items-center"
+                    >
+                      <LinkIcon className="h-4 w-4 mr-1" />
+                      View Document
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="history">
+        <TabsList>
+          <TabsTrigger value="history">Version History</TabsTrigger>
+          <TabsTrigger value="related">Related Items</TabsTrigger>
+        </TabsList>
+        <TabsContent value="history" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Document History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Version</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Updated By</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* This would be populated from document history records */}
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6">
+                        No history records available
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="related" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Related Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Number</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* This would be populated from related items */}
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6">
+                        No related items found
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {approvalAction === "approve" ? "Approve Document" : "Reject Document"}
+            </DialogTitle>
+            <DialogDescription>
+              {approvalAction === "approve" 
+                ? "This will approve the document and make it available for use."
+                : "Please provide a reason for rejecting this document."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <label className="text-sm font-medium mb-2 block">
+              {approvalAction === "approve" ? "Comments (Optional)" : "Reason for Rejection"}
+            </label>
+            <Textarea
+              value={approvalReason}
+              onChange={(e) => setApprovalReason(e.target.value)}
+              placeholder={approvalAction === "approve" 
+                ? "Add any comments about this approval" 
+                : "Explain why this document is being rejected"}
+              className="min-h-[100px]"
+              required={approvalAction === "reject"}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setApprovalDialogOpen(false)}
+              disabled={approvalLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleApprovalSubmit}
+              disabled={approvalLoading || (approvalAction === "reject" && !approvalReason)}
+            >
+              {approvalLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {approvalAction === "approve" ? "Approve" : "Reject"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
