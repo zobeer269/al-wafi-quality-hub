@@ -18,6 +18,8 @@ import Audits from "./pages/Audits";
 import Suppliers from "./pages/Suppliers";
 import Risk from "./pages/Risk";
 import Change from "./pages/Change";
+import ChangeCreatePage from "./pages/change/ChangeCreatePage";
+import ChangeDetailPage from "./pages/change/ChangeDetailPage";
 import Training from "./pages/Training";
 
 export function App() {
@@ -41,6 +43,8 @@ export function App() {
         <Route path="/suppliers" element={<Suppliers />} />
         <Route path="/risk" element={<Risk />} />
         <Route path="/change" element={<Change />} />
+        <Route path="/change/create" element={<ChangeCreatePage />} />
+        <Route path="/change/:id" element={<ChangeDetailPage />} />
         <Route path="/training" element={<Training />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

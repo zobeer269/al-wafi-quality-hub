@@ -239,6 +239,101 @@ export type Database = {
           },
         ]
       }
+      change_control_history: {
+        Row: {
+          change_control_id: string
+          changed_by: string
+          comments: string | null
+          created_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["change_control_status"]
+        }
+        Insert: {
+          change_control_id: string
+          changed_by: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          status: Database["public"]["Enums"]["change_control_status"]
+        }
+        Update: {
+          change_control_id?: string
+          changed_by?: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["change_control_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_control_history_change_control_id_fkey"
+            columns: ["change_control_id"]
+            isOneToOne: false
+            referencedRelation: "change_controls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_controls: {
+        Row: {
+          affected_area: Database["public"]["Enums"]["affected_area"]
+          approved_by: string | null
+          change_reason: string
+          created_at: string | null
+          id: string
+          impact_assessment: string | null
+          implementation_date: string | null
+          implementation_plan: string | null
+          initiator: string | null
+          linked_document_id: string | null
+          linked_product_id: string | null
+          linked_risk_id: string | null
+          reviewed_by: string | null
+          risk_rating: Database["public"]["Enums"]["risk_rating"] | null
+          status: Database["public"]["Enums"]["change_control_status"]
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          affected_area: Database["public"]["Enums"]["affected_area"]
+          approved_by?: string | null
+          change_reason: string
+          created_at?: string | null
+          id?: string
+          impact_assessment?: string | null
+          implementation_date?: string | null
+          implementation_plan?: string | null
+          initiator?: string | null
+          linked_document_id?: string | null
+          linked_product_id?: string | null
+          linked_risk_id?: string | null
+          reviewed_by?: string | null
+          risk_rating?: Database["public"]["Enums"]["risk_rating"] | null
+          status?: Database["public"]["Enums"]["change_control_status"]
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          affected_area?: Database["public"]["Enums"]["affected_area"]
+          approved_by?: string | null
+          change_reason?: string
+          created_at?: string | null
+          id?: string
+          impact_assessment?: string | null
+          implementation_date?: string | null
+          implementation_plan?: string | null
+          initiator?: string | null
+          linked_document_id?: string | null
+          linked_product_id?: string | null
+          linked_risk_id?: string | null
+          reviewed_by?: string | null
+          risk_rating?: Database["public"]["Enums"]["risk_rating"] | null
+          status?: Database["public"]["Enums"]["change_control_status"]
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       changes: {
         Row: {
           approval_notes: string | null
@@ -1089,6 +1184,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      check_pending_change_controls: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       has_role: {
         Args: {
           requested_user_id: string
@@ -1106,10 +1205,17 @@ export type Database = {
       }
     }
     Enums: {
+      affected_area: "Process" | "Product" | "Document" | "Supplier" | "System"
       audit_status: "Scheduled" | "In Progress" | "Completed" | "Cancelled"
       audit_type: "Internal" | "External" | "Supplier" | "Regulatory"
       capa_status: "Open" | "Investigation" | "In Progress" | "Closed"
       capa_type: "Corrective" | "Preventive" | "Both"
+      change_control_status:
+        | "Open"
+        | "Under Review"
+        | "Approved"
+        | "Rejected"
+        | "Implemented"
       change_status:
         | "Pending"
         | "Under Review"
@@ -1127,6 +1233,7 @@ export type Database = {
         | "Correction"
         | "Verification"
         | "Closed"
+      risk_rating: "Low" | "Medium" | "High"
       risk_status: "Open" | "Mitigated" | "Closed"
       supplier_status: "Pending" | "Approved" | "Suspended" | "Blacklisted"
       training_status:
@@ -1258,10 +1365,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      affected_area: ["Process", "Product", "Document", "Supplier", "System"],
       audit_status: ["Scheduled", "In Progress", "Completed", "Cancelled"],
       audit_type: ["Internal", "External", "Supplier", "Regulatory"],
       capa_status: ["Open", "Investigation", "In Progress", "Closed"],
       capa_type: ["Corrective", "Preventive", "Both"],
+      change_control_status: [
+        "Open",
+        "Under Review",
+        "Approved",
+        "Rejected",
+        "Implemented",
+      ],
       change_status: [
         "Pending",
         "Under Review",
@@ -1281,6 +1396,7 @@ export const Constants = {
         "Verification",
         "Closed",
       ],
+      risk_rating: ["Low", "Medium", "High"],
       risk_status: ["Open", "Mitigated", "Closed"],
       supplier_status: ["Pending", "Approved", "Suspended", "Blacklisted"],
       training_status: [
