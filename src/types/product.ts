@@ -40,6 +40,7 @@ export interface ProductFormValues {
   category?: string;
   manufacturer?: string;
   registration_number?: string;
+  status?: ProductStatus;
 }
 
 export interface ProductVersionFormValues {
@@ -48,4 +49,9 @@ export interface ProductVersionFormValues {
   linked_capa_id?: string;
   linked_sop_id?: string;
   effective_date?: string;
+}
+
+export interface ProductFilters {
+  status?: ProductStatus;
+  category?: string;
 }

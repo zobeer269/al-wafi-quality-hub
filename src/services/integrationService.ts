@@ -12,6 +12,7 @@ export interface AuditFinding {
   due_date?: string | null;
 }
 
+// This interface matches database schema
 export interface CAPA {
   id: string;
   number: string;
@@ -31,6 +32,12 @@ export interface CAPA {
   approved_at?: string | null;
   tags?: string[];
   ai_notes?: string | null;
+  due_date?: string | null;
+  assigned_to?: string | null;
+  root_cause?: string | null;
+  action_plan?: string | null;
+  effectiveness_check_required?: boolean;
+  effectiveness_verified?: boolean;
 }
 
 /**
@@ -56,9 +63,40 @@ export async function getOpenAuditFindings(): Promise<AuditFinding[]> {
 }
 
 /**
+ * Convert database CAPA to frontend CAPA type
+ */
+function mapDatabaseCAPAToFrontend(capa: CAPA): import('@/types/document').CAPA {
+  return {
+    id: capa.id,
+    number: capa.number,
+    title: capa.title || `CAPA ${capa.number}`, // Fallback title
+    description: capa.description,
+    type: capa.capa_type,
+    priority: capa.priority,
+    status: capa.status,
+    createdDate: capa.created_at || new Date().toISOString(),
+    dueDate: capa.due_date,
+    assignedTo: capa.assigned_to,
+    root_cause: capa.root_cause,
+    action_plan: capa.action_plan,
+    created_by: capa.created_by || '',
+    closed_date: capa.closed_date,
+    effectiveness_check_required: capa.effectiveness_check_required,
+    effectiveness_verified: capa.effectiveness_verified,
+    linked_nc_id: capa.linked_nc_id,
+    linkedAuditFindingId: capa.linked_audit_finding_id,
+    approval_status: capa.approval_status,
+    approved_by: capa.approved_by,
+    approved_at: capa.approved_at,
+    tags: capa.tags || [],
+    ai_notes: capa.ai_notes
+  };
+}
+
+/**
  * Get all open CAPAs
  */
-export async function getOpenCAPAs(): Promise<CAPA[]> {
+export async function getOpenCAPAs(): Promise<import('@/types/document').CAPA[]> {
   try {
     const { data, error } = await supabase
       .from('capas')
@@ -70,22 +108,7 @@ export async function getOpenCAPAs(): Promise<CAPA[]> {
       return [];
     }
 
-    return data.map(capa => ({
-      id: capa.id,
-      number: capa.number,
-      title: capa.title || `CAPA ${capa.number}`, // Fallback title
-      description: capa.description,
-      capa_type: capa.capa_type as CAPAType,
-      priority: capa.priority as CAPAPriority,
-      status: capa.status as CAPAStatus,
-      linked_nc_id: capa.linked_nc_id,
-      linked_audit_finding_id: capa.linked_audit_finding_id,
-      approval_status: capa.approval_status as ApprovalStatus,
-      approved_by: capa.approved_by,
-      approved_at: capa.approved_at,
-      tags: capa.tags || [],
-      ai_notes: capa.ai_notes
-    }));
+    return data.map(capa => mapDatabaseCAPAToFrontend(capa));
   } catch (error) {
     console.error('Exception fetching open CAPAs:', error);
     return [];
@@ -95,7 +118,7 @@ export async function getOpenCAPAs(): Promise<CAPA[]> {
 /**
  * Get a specific CAPA by ID
  */
-export async function getCAPAById(id: string): Promise<CAPA | null> {
+export async function getCAPAById(id: string): Promise<import('@/types/document').CAPA | null> {
   try {
     const { data, error } = await supabase
       .from('capas')
@@ -108,22 +131,7 @@ export async function getCAPAById(id: string): Promise<CAPA | null> {
       return null;
     }
 
-    return {
-      id: data.id,
-      number: data.number,
-      title: data.title || `CAPA ${data.number}`,
-      description: data.description,
-      capa_type: data.capa_type as CAPAType,
-      priority: data.priority as CAPAPriority,
-      status: data.status as CAPAStatus,
-      linked_nc_id: data.linked_nc_id,
-      linked_audit_finding_id: data.linked_audit_finding_id,
-      approval_status: data.approval_status as ApprovalStatus,
-      approved_by: data.approved_by,
-      approved_at: data.approved_at,
-      tags: data.tags || [],
-      ai_notes: data.ai_notes
-    };
+    return mapDatabaseCAPAToFrontend(data);
   } catch (error) {
     console.error('Exception fetching CAPA by ID:', error);
     return null;
@@ -175,7 +183,7 @@ export async function createCAPAFromNC(data: {
   severity: string;
   nc_id: string;
   reported_by: string;
-}): Promise<CAPA> {
+}): Promise<import('@/types/document').CAPA> {
   try {
     // Map severity to priority
     const priority = mapSeverityToPriority(data.severity);
@@ -221,22 +229,7 @@ export async function createCAPAFromNC(data: {
       }
     }
 
-    return {
-      id: capaData.id,
-      number: capaData.number,
-      title: capaData.title,
-      description: capaData.description,
-      capa_type: capaData.capa_type as CAPAType,
-      priority: capaData.priority as CAPAPriority,
-      status: capaData.status as CAPAStatus,
-      linked_nc_id: capaData.linked_nc_id,
-      linked_audit_finding_id: capaData.linked_audit_finding_id,
-      approval_status: capaData.approval_status as ApprovalStatus,
-      approved_by: capaData.approved_by,
-      approved_at: capaData.approved_at,
-      tags: capaData.tags || [],
-      ai_notes: capaData.ai_notes
-    };
+    return mapDatabaseCAPAToFrontend(capaData);
   } catch (error) {
     console.error('Exception creating CAPA:', error);
     throw error;
