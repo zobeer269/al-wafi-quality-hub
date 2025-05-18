@@ -20,13 +20,13 @@ export interface Document {
   status: DocumentStatus;
   lastUpdated: string;
   description?: string;
-  content_url?: string;
+  content_url?: string | null;
   approval_status?: ApprovalStatus;
-  approved_by?: string;
-  approved_at?: string;
-  effective_date?: string;
-  review_date?: string;
-  expiry_date?: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  effective_date?: string | null;
+  review_date?: string | null;
+  expiry_date?: string | null;
 }
 
 export interface CAPA {
@@ -38,21 +38,21 @@ export interface CAPA {
   priority: CAPAPriority;
   status: CAPAStatus;
   createdDate: string;  // matches created_at in database
-  dueDate?: string;     // matches due_date in database
-  assignedTo?: string;  // matches assigned_to in database
-  root_cause?: string;
-  action_plan?: string;
+  dueDate?: string | null;     // matches due_date in database
+  assignedTo?: string | null;  // matches assigned_to in database
+  root_cause?: string | null;
+  action_plan?: string | null;
   created_by: string;
-  closed_date?: string;
+  closed_date?: string | null;
   effectiveness_check_required?: boolean;
   effectiveness_verified?: boolean;
-  linked_nc_id?: string;
-  linkedAuditFindingId?: string;  // matches linked_audit_finding_id in database
+  linked_nc_id?: string | null;
+  linkedAuditFindingId?: string | null;  // matches linked_audit_finding_id in database
   approval_status?: ApprovalStatus;
-  approved_by?: string;
-  approved_at?: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
   tags?: string[];
-  ai_notes?: string;
+  ai_notes?: string | null;
 }
 
 export interface Signature {

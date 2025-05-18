@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Complaint, ComplaintFilters, ComplaintStatus } from "@/types/complaint";
 import { toast } from "@/components/ui/use-toast";
@@ -12,20 +13,20 @@ const toComplaint = (data: any): Complaint => {
     title: data.title || '',
     description: data.description || '',
     source: data.source || '',
-    product_id: data.product_id || undefined,
-    product: data.products || undefined,
-    batch_number: data.batch_number || undefined,
+    product_id: data.product_id || null,
+    product: data.products || null,
+    batch_number: data.batch_number || null,
     severity: data.severity || 'Medium',
     status: data.status || 'Open',
-    linked_nc_id: data.linked_nc_id || undefined,
-    linked_capa_id: data.linked_capa_id || undefined,
-    assigned_to: data.assigned_to || undefined,
+    linked_nc_id: data.linked_nc_id || null,
+    linked_capa_id: data.linked_capa_id || null,
+    assigned_to: data.assigned_to || null,
     reported_by: data.reported_by || '',
     reported_at: data.reported_at || new Date().toISOString(),
-    closed_at: data.closed_at || undefined,
-    closed_by: data.closed_by || undefined,
-    resolution_notes: data.resolution_notes || undefined,
-    justification: data.justification || undefined,
+    closed_at: data.closed_at || null,
+    closed_by: data.closed_by || null,
+    resolution_notes: data.resolution_notes || null,
+    justification: data.justification || null,
     created_at: data.created_at || new Date().toISOString(),
     updated_at: data.updated_at || new Date().toISOString()
   };

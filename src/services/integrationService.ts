@@ -9,7 +9,7 @@ export interface AuditFinding {
   description: string;
   severity: string;
   status: string;
-  due_date?: string;
+  due_date?: string | null;
 }
 
 export interface CAPA {
@@ -20,16 +20,17 @@ export interface CAPA {
   capa_type: CAPAType;
   priority: CAPAPriority;
   status: CAPAStatus;
-  linked_nc_id?: string;
-  linked_audit_finding_id?: string;
+  linked_nc_id?: string | null;
+  linked_audit_finding_id?: string | null;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
-  closed_date?: string;
+  closed_date?: string | null;
   approval_status?: ApprovalStatus;
-  approved_by?: string;
-  approved_at?: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
   tags?: string[];
+  ai_notes?: string | null;
 }
 
 /**
@@ -82,7 +83,8 @@ export async function getOpenCAPAs(): Promise<CAPA[]> {
       approval_status: capa.approval_status as ApprovalStatus,
       approved_by: capa.approved_by,
       approved_at: capa.approved_at,
-      tags: capa.tags || []
+      tags: capa.tags || [],
+      ai_notes: capa.ai_notes
     }));
   } catch (error) {
     console.error('Exception fetching open CAPAs:', error);
@@ -119,7 +121,8 @@ export async function getCAPAById(id: string): Promise<CAPA | null> {
       approval_status: data.approval_status as ApprovalStatus,
       approved_by: data.approved_by,
       approved_at: data.approved_at,
-      tags: data.tags || []
+      tags: data.tags || [],
+      ai_notes: data.ai_notes
     };
   } catch (error) {
     console.error('Exception fetching CAPA by ID:', error);
@@ -195,7 +198,8 @@ export async function createCAPAFromNC(data: {
         linked_nc_id: data.nc_id,
         created_by: data.reported_by,
         number: capaNumber,
-        approval_status: 'Pending'
+        approval_status: 'Pending',
+        tags: []
       })
       .select()
       .single();
@@ -230,7 +234,8 @@ export async function createCAPAFromNC(data: {
       approval_status: capaData.approval_status as ApprovalStatus,
       approved_by: capaData.approved_by,
       approved_at: capaData.approved_at,
-      tags: capaData.tags || []
+      tags: capaData.tags || [],
+      ai_notes: capaData.ai_notes
     };
   } catch (error) {
     console.error('Exception creating CAPA:', error);
