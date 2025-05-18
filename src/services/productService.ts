@@ -1,66 +1,54 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Product, ProductFilters, ProductVersion } from "@/types/product";
-import { toast } from "@/components/ui/use-toast";
+import { Product, ProductFormValues, ProductStatus, ProductFilters, ProductVersion, ProductVersionFormValues } from "@/types/product";
+import { toast } from "@/hooks/use-toast";
 
 // Function to fetch products with optional filters
-export const fetchProducts = async (filters: ProductFilters = {}): Promise<Product[]> => {
+export async function getProducts(filters?: ProductFilters): Promise<Product[]> {
   try {
     let query = supabase
       .from('products')
       .select('*')
-      .order('created_at', { ascending: false });
-
-    // Apply filters if provided
-    if (filters.status && filters.status !== 'all') {
-      query = query.eq('status', filters.status);
+      .order('name');
+    
+    if (filters) {
+      // Filter by status if provided and not 'all'
+      if (filters.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status);
+      }
+      
+      // Filter by category if provided
+      if (filters.category && filters.category !== 'all') {
+        query = query.eq('category', filters.category);
+      }
+      
+      // Filter by manufacturer if provided
+      if (filters.manufacturer && filters.manufacturer !== 'all') {
+        query = query.eq('manufacturer', filters.manufacturer);
+      }
+      
+      // Filter by date range if provided
+      if (filters.dateFrom) {
+        query = query.gte('created_at', filters.dateFrom);
+      }
+      
+      if (filters.dateTo) {
+        query = query.lte('created_at', filters.dateTo);
+      }
     }
     
-    if (filters.category && filters.category !== 'all') {
-      query = query.eq('category', filters.category);
-    }
-    
-    if (filters.manufacturer && filters.manufacturer !== 'all') {
-      query = query.eq('manufacturer', filters.manufacturer);
-    }
-    
-    if (filters.dateFrom) {
-      query = query.gte('created_at', filters.dateFrom);
-    }
-    
-    if (filters.dateTo) {
-      query = query.lte('created_at', filters.dateTo);
-    }
-
     const { data, error } = await query;
-
+    
     if (error) {
-      throw error;
+      console.error('Error fetching products:', error);
+      return [];
     }
-
-    return data.map(p => ({
-      id: p.id,
-      sku: p.sku,
-      name: p.name,
-      category: p.category || undefined,
-      description: p.description || undefined,
-      manufacturer: p.manufacturer || undefined,
-      registration_number: p.registration_number || undefined,
-      status: p.status as Product['status'],
-      created_by: p.created_by,
-      created_at: p.created_at,
-      updated_at: p.updated_at,
-    }));
+    
+    return data as Product[];
   } catch (error) {
-    console.error('Error fetching products:', error);
-    toast({
-      title: "Error",
-      description: "Failed to load products. Please try again.",
-      variant: "destructive",
-    });
+    console.error('Error in getProducts:', error);
     return [];
   }
-};
+}
 
 // Get unique product categories for filters
 export const getProductCategories = async (): Promise<string[]> => {
@@ -430,3 +418,11 @@ export const updateProductVersion = async (id: string, versionData: Partial<Prod
     return null;
   }
 };
+
+// Function to check product status
+const checkProductStatus = (status: string): boolean => {
+  // Use proper status comparison with ProductStatus type
+  return status === 'Approved' || status === 'Released';
+};
+
+// Fix any function that was using 'Active' comparison with the checkProductStatus function

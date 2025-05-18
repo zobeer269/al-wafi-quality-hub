@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { 
   NonConformance, 
@@ -76,8 +77,8 @@ export async function getNonConformances(filters?: NonConformanceFilters): Promi
     // Generate tags for any NCs that don't have them yet
     const result = data.map(nc => {
       if (!nc.tags && nc.description) {
-        const tags = generateSmartTags(nc.description, nc.severity, nc.source);
-        return { ...nc, tags };
+        const generatedTags = generateSmartTags(nc.description, nc.severity, nc.source);
+        return { ...nc, tags: generatedTags };
       }
       return nc;
     });

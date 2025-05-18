@@ -1,7 +1,7 @@
 
 import { Product } from "./product";
 import { NonConformance } from "./nonConformance";
-import { CAPA } from "./document";
+import { CAPA, ApprovalStatus } from "./document";
 
 export type ComplaintSource = 'Customer' | 'Internal' | 'Distributor' | 'Inspector';
 export type ComplaintSeverity = 'Low' | 'Medium' | 'High' | 'Critical';

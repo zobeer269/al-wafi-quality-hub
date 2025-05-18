@@ -18,7 +18,8 @@ export type ProductStatus =
   | "Pending Approval" 
   | "Approved" 
   | "Released" 
-  | "Obsolete";
+  | "Obsolete"
+  | "all";  // Adding "all" as a valid filter value
 
 export interface ProductVersion {
   id: string;
@@ -28,7 +29,7 @@ export interface ProductVersion {
   linked_capa_id?: string | null;
   linked_sop_id?: string | null;
   effective_date?: string | null;
-  status: "Draft" | "Under Review" | "Approved" | "Released";
+  status: "Draft" | "Under Review" | "Approved" | "Released" | "Active";
   created_at: string;
   created_by: string;
 }
@@ -54,4 +55,7 @@ export interface ProductVersionFormValues {
 export interface ProductFilters {
   status?: ProductStatus;
   category?: string;
+  manufacturer?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }

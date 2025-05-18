@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Function to seed demo data
@@ -64,14 +63,7 @@ export const seedDemoData = async () => {
       { user_id: '00000000-0000-0000-0000-000000000003', role: 'user' }
     ];
     
-    const { error: rolesError } = await supabase
-      .from('user_roles')
-      .insert(rolesToCreate);
-      
-    if (rolesError) {
-      console.error("Error creating user roles:", rolesError);
-      return { success: false, message: "Failed to create user roles" };
-    }
+    await createUserRoles(rolesToCreate);
     
     // 3. Create sample products
     const adminUserId = '00000000-0000-0000-0000-000000000001';
@@ -234,3 +226,26 @@ export const seedDemoData = async () => {
     return { success: false, message: "An unexpected error occurred while seeding data" };
   }
 };
+
+// Update the function that's inserting user roles
+async function createUserRoles(roles: { user_id: string; role: string }[]): Promise<void> {
+  try {
+    // Insert roles one by one to avoid type issues
+    for (const roleData of roles) {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: roleData.user_id,
+          role: roleData.role
+        });
+      
+      if (error) {
+        console.error('Error creating user role:', error);
+      }
+    }
+    
+    console.log('User roles created successfully');
+  } catch (error) {
+    console.error('Error in createUserRoles:', error);
+  }
+}

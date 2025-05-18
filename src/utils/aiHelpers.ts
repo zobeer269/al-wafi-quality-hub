@@ -1,6 +1,7 @@
-
-import { NonConformance, NonConformanceSeverity } from '@/types/nonConformance';
+import { CAPA } from "@/types/document";
+import { NonConformance } from "@/types/nonConformance";
 import { CAPA, CAPAPriority, CAPAStatus } from '@/types/document';
+import { NonConformanceSeverity } from '@/types/nonConformance';
 
 /**
  * AI-powered priority suggestion for CAPAs
@@ -189,4 +190,61 @@ export function filterByTags(items: (CAPA | NonConformance)[], filterTags: strin
     const itemTags = item.tags || [];
     return filterTags.some(tag => itemTags.includes(tag));
   });
+}
+
+/**
+ * Generate risk score based on item's properties
+ */
+export function generateRiskScore(item: CAPA | NonConformance): number {
+  let score = 0;
+
+  // Base score calculation
+  if ('priority' in item && typeof item.priority === 'number') {
+    // For CAPAs
+    score += item.priority * 20;
+  } else if ('severity' in item) {
+    // For NonConformances
+    switch (item.severity) {
+      case 'Critical':
+        score += 100;
+        break;
+      case 'Major':
+        score += 70;
+        break;
+      case 'Minor':
+        score += 30;
+        break;
+      default:
+        score += 10;
+    }
+  }
+
+  // Due date factor
+  const dueDateProperty = 'dueDate' in item ? item.dueDate : ('due_date' in item ? item.due_date : null);
+  
+  if (dueDateProperty) {
+    const dueDate = new Date(dueDateProperty);
+    const today = new Date();
+    const daysUntilDue = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilDue < 0) {
+      // Overdue
+      score += 50;
+    } else if (daysUntilDue < 7) {
+      // Due soon
+      score += 30;
+    } else if (daysUntilDue < 14) {
+      // Due in 1-2 weeks
+      score += 15;
+    }
+  }
+
+  // Status factor
+  if ('status' in item) {
+    if (item.status === 'Open' || item.status === 'Investigation') {
+      score += 20;
+    }
+  }
+
+  return score;
 }
