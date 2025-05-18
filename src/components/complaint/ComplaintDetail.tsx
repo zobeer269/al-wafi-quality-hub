@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,7 @@ import {
 import { Complaint } from '@/types/complaint';
 import { fetchComplaintById, assignComplaint, closeComplaint, linkComplaint } from '@/services/complaintService';
 import { fetchCAPAs } from '@/services/capaService';
-import { fetchNonConformances } from '@/services/nonConformanceService';
+import { getNonConformances } from '@/services/nonConformanceService';
 import { supabase } from '@/integrations/supabase/client';
 import { CAPA } from '@/types/document';
 import { NonConformance } from '@/types/nonConformance';
@@ -100,7 +100,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onStatus
   };
 
   const loadLinkableItems = async () => {
-    const ncData = await fetchNonConformances();
+    const ncData = await getNonConformances();
     const capaData = await fetchCAPAs();
     setNonConformances(ncData.filter(nc => nc.status !== 'Closed'));
     setCAPAs(capaData.filter(capa => capa.status !== 'Closed'));

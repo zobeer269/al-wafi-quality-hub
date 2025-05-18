@@ -1,141 +1,111 @@
-
-import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useState, useEffect } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Document, DocumentStatus } from '@/types/document';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Document } from '@/types/document';
-import { Eye, Download, Search } from 'lucide-react';
-import DocumentDetail from '@/components/document-control/DocumentDetail';
-import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog"
+import DocumentDetail from './DocumentDetail';
 
 interface DocumentListProps {
   documents: Document[];
-  onRefresh?: () => void;
+  onFilterStatus?: (status: DocumentStatus | null) => void;
 }
 
-export const DocumentList: React.FC<DocumentListProps> = ({ documents, onRefresh }) => {
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus }) => {
+  const [filterStatus, setFilterStatus] = useState<DocumentStatus | null>(null);
+	const [showDetail, setShowDetail] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
-  const filteredDocuments = documents.filter(doc => 
-    doc.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleViewDocument = (document: Document) => {
-    setSelectedDocument(document);
-    setDetailOpen(true);
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    } catch (e) {
-      return dateString;
+  const handleStatusClick = (status: DocumentStatus) => {
+    const newStatus = filterStatus === status ? null : status;
+    setFilterStatus(newStatus);
+    if (onFilterStatus) {
+      onFilterStatus(newStatus);
     }
   };
 
-  const getStatusBadgeClass = (status: string) => {
+  const getStatusBadge = (status: DocumentStatus) => {
     switch (status) {
-      case 'Draft':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'In Review':
-        return 'bg-blue-100 text-blue-800';
-      case 'Approved':
-        return 'bg-green-100 text-green-800';
-      case 'Obsolete':
-        return 'bg-gray-100 text-gray-800';
+      case "Draft":
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 cursor-pointer" onClick={() => handleStatusClick(status)}>Draft</Badge>;
+      case "In Review":
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 cursor-pointer" onClick={() => handleStatusClick(status)}>In Review</Badge>;
+      case "Approved":
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 cursor-pointer" onClick={() => handleStatusClick(status)}>Approved</Badge>;
+      case "Obsolete":
+        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 cursor-pointer" onClick={() => handleStatusClick(status)}>Obsolete</Badge>;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Badge variant="outline" className="cursor-pointer" onClick={() => handleStatusClick(status)}>Unknown</Badge>;
     }
+  };
+
+  // Fix the document prop to use documentId instead
+  const handleViewDocument = (document: Document) => {
+    setSelectedDocumentId(document.id);
+    setShowDetail(true);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Search documents..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Document #</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead className="hidden md:table-cell">Type</TableHead>
-              <TableHead className="hidden md:table-cell">Version</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Last Updated</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredDocuments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  No documents found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredDocuments.map((doc) => (
-                <TableRow key={doc.id}>
-                  <TableCell className="font-medium">{doc.number}</TableCell>
-                  <TableCell>{doc.title}</TableCell>
-                  <TableCell className="hidden md:table-cell">{doc.type}</TableCell>
-                  <TableCell className="hidden md:table-cell">{doc.version}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeClass(doc.status)}`}>
-                      {doc.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{formatDate(doc.lastUpdated)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDocument(doc)}
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">View</span>
-                    </Button>
-                    {doc.content_url && (
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
-                        <span className="sr-only">Download</span>
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="sm:max-w-[700px] p-0">
-          {selectedDocument && (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>Title</TableHead>
+          <TableHead>Type</TableHead>
+          <TableHead>Version</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Last Updated</TableHead>
+          <TableHead></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {documents.map((document) => (
+          <TableRow key={document.id} className="cursor-pointer hover:bg-gray-100" onClick={() => handleViewDocument(document)}>
+            <TableCell className="font-medium">{document.number}</TableCell>
+            <TableCell>{document.title}</TableCell>
+            <TableCell>{document.type}</TableCell>
+            <TableCell>{document.version}</TableCell>
+            <TableCell>{getStatusBadge(document.status)}</TableCell>
+            <TableCell>{document.lastUpdated}</TableCell>
+            <TableCell>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <span className="sr-only">View</span>
+                <Check className="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+        {documents.length === 0 && (
+          <TableRow>
+            <TableCell colSpan={7} className="h-24 text-center">
+              No documents found
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+			{showDetail && selectedDocumentId && (
+        <Dialog open={showDetail} onOpenChange={setShowDetail}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
             <DocumentDetail 
-              document={selectedDocument} 
-              onClose={() => setDetailOpen(false)}
-              onStatusChange={onRefresh || (() => {})}
+              documentId={selectedDocumentId} 
+              onClose={() => setShowDetail(false)}
+              onStatusChange={() => {}}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </Table>
   );
 };
 

@@ -1,6 +1,25 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { CAPA } from "@/types/document";
+import { CAPA, CAPAStatus, CAPAPriority, ApprovalStatus } from "@/types/document";
 import { toast } from "@/components/ui/use-toast";
+
+export interface CAPAInput {
+  title: string;
+  description: string;
+  type: string;
+  priority: CAPAPriority;
+  status?: CAPAStatus;
+  dueDate?: string;
+  assignedTo?: string;
+  root_cause?: string;
+  action_plan?: string;
+  linked_nc_id?: string;
+  linked_audit_finding_id?: string;
+  effectiveness_check_required?: boolean;
+  effectiveness_verified?: boolean;
+  tags?: string[];
+  ai_notes?: string;
+}
 
 // Fetch CAPAs for dropdown selection
 export const fetchCAPAs = async () => {
@@ -22,18 +41,21 @@ export const fetchCAPAs = async () => {
       description: capa.description,
       priority: capa.priority,
       status: capa.status,
-      capa_type: capa.capa_type,
+      type: capa.capa_type,
+      createdDate: capa.created_at,
       action_plan: capa.action_plan,
       root_cause: capa.root_cause,
       created_by: capa.created_by,
-      assigned_to: capa.assigned_to,
-      created_at: capa.created_at,
-      due_date: capa.due_date,
+      assignedTo: capa.assigned_to,
+      dueDate: capa.due_date,
       closed_date: capa.closed_date,
       effectiveness_check_required: capa.effectiveness_check_required,
       effectiveness_verified: capa.effectiveness_verified,
       linked_nc_id: capa.linked_nc_id,
-      updated_at: capa.updated_at,
+      approval_status: capa.approval_status,
+      approved_by: capa.approved_by,
+      approved_at: capa.approved_at,
+      tags: capa.tags
     }));
   } catch (error) {
     console.error('Error fetching CAPAs:', error);
@@ -42,7 +64,7 @@ export const fetchCAPAs = async () => {
 };
 
 // Create a new CAPA
-export const createCAPA = async (capaData: Partial<CAPA>) => {
+export const createCAPA = async (capaData: CAPAInput) => {
   try {
     const { data: userData } = await supabase.auth.getUser();
     
@@ -50,16 +72,17 @@ export const createCAPA = async (capaData: Partial<CAPA>) => {
       title: capaData.title || '',
       description: capaData.description || '',
       priority: capaData.priority || 2,
-      capa_type: capaData.capa_type || 'Corrective',
+      capa_type: capaData.type || 'Corrective',
       status: 'Open',
       action_plan: capaData.action_plan || null,
       root_cause: capaData.root_cause || null,
-      due_date: capaData.due_date || null,
+      due_date: capaData.dueDate || null,
       created_by: userData.user?.id || '',
-      assigned_to: capaData.assigned_to || null,
+      assigned_to: capaData.assignedTo || null,
       linked_nc_id: capaData.linked_nc_id || null,
       effectiveness_check_required: capaData.effectiveness_check_required || false,
       effectiveness_verified: false,
+      tags: capaData.tags || []
     };
     
     const { data, error } = await supabase
@@ -102,12 +125,12 @@ export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
       title: capaData.title,
       description: capaData.description,
       priority: capaData.priority,
-      capa_type: capaData.capa_type,
+      capa_type: capaData.type,
       status: capaData.status,
       action_plan: capaData.action_plan,
       root_cause: capaData.root_cause,
-      due_date: capaData.due_date,
-      assigned_to: capaData.assigned_to,
+      due_date: capaData.dueDate,
+      assigned_to: capaData.assignedTo,
       linked_nc_id: capaData.linked_nc_id,
       effectiveness_check_required: capaData.effectiveness_check_required,
       effectiveness_verified: capaData.effectiveness_verified,
@@ -149,11 +172,47 @@ export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
   }
 };
 
-// Instead of direct interactions with the signatures table, we'll use RPC functions
+// Add the missing functions that were referenced in CAPADetail
+export const userCanApprove = async (): Promise<boolean> => {
+  try {
+    // Use existing RPC function to check if user can approve
+    const { data, error } = await supabase.rpc('can_approve_products');
+    
+    if (error) {
+      console.error('Error checking approval permissions:', error);
+      return false;
+    }
+    
+    return data || false;
+  } catch (error) {
+    console.error('Error in userCanApprove:', error);
+    return false;
+  }
+};
+
+export const getUserName = async (userId: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single();
+      
+    if (error || !data) {
+      return null;
+    }
+    
+    return `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Unknown User';
+  } catch (error) {
+    console.error('Error getting user name:', error);
+    return null;
+  }
+};
+
 export const approveCAPA = async (
   capaId: string, 
   userId: string, 
-  approval: boolean,
+  approvalAction: ApprovalStatus,
   reason?: string
 ): Promise<boolean> => {
   try {
@@ -161,7 +220,9 @@ export const approveCAPA = async (
     const { error: updateError } = await supabase
       .from('capas')
       .update({
-        status: approval ? 'Approved' : 'Rejected',
+        approval_status: approvalAction,
+        approved_by: userId,
+        approved_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', capaId);
@@ -169,20 +230,10 @@ export const approveCAPA = async (
     if (updateError) {
       throw updateError;
     }
-    
-    // Instead of directly interacting with signatures table, use a function call to the backend
-    const { data: rpcResponse, error: rpcError } = await supabase.rpc(
-      'can_approve_products'
-    );
-    
-    if (rpcError) {
-      console.error('Error with RPC call:', rpcError);
-      throw rpcError;
-    }
 
     toast({
       title: "Success",
-      description: `CAPA ${approval ? 'approved' : 'rejected'} successfully`,
+      description: `CAPA ${approvalAction === 'Approved' ? 'approved' : 'rejected'} successfully`,
     });
     
     return true;
@@ -190,9 +241,54 @@ export const approveCAPA = async (
     console.error('Error in approveCAPA:', error);
     toast({
       title: "Error",
-      description: `Failed to ${approval ? 'approve' : 'reject'} CAPA`,
+      description: `Failed to ${approvalAction === 'Approved' ? 'approve' : 'reject'} CAPA`,
       variant: "destructive",
     });
     return false;
+  }
+};
+
+// Add getCAPAStatistics function to fix the error in CAPA.tsx
+export const getCAPAStatistics = async () => {
+  try {
+    const { data: openCAPAs, error: openError } = await supabase
+      .from('capas')
+      .select('count')
+      .eq('status', 'Open')
+      .single();
+      
+    const { data: inProgressCAPAs, error: inProgressError } = await supabase
+      .from('capas')
+      .select('count')
+      .eq('status', 'In Progress')
+      .single();
+      
+    const { data: closedCAPAs, error: closedError } = await supabase
+      .from('capas')
+      .select('count')
+      .eq('status', 'Closed')
+      .single();
+      
+    if (openError || inProgressError || closedError) {
+      console.error('Error fetching CAPA statistics');
+      return {
+        open: 0,
+        inProgress: 0,
+        closed: 0
+      };
+    }
+    
+    return {
+      open: openCAPAs?.count || 0,
+      inProgress: inProgressCAPAs?.count || 0,
+      closed: closedCAPAs?.count || 0
+    };
+  } catch (error) {
+    console.error('Error in getCAPAStatistics:', error);
+    return {
+      open: 0,
+      inProgress: 0,
+      closed: 0
+    };
   }
 };
