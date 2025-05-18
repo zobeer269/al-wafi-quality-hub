@@ -40,18 +40,6 @@ export function formatDateSimple(dateString: string): string {
   });
 }
 
-export const Label: React.FC<{
-  htmlFor?: string;
-  children: React.ReactNode;
-}> = ({ htmlFor, children }) => (
-  <label
-    htmlFor={htmlFor}
-    className="block text-sm font-medium text-gray-700 mb-1"
-  >
-    {children}
-  </label>
-);
-
 export function getInitials(name: string): string {
   return name
     .split(' ')
