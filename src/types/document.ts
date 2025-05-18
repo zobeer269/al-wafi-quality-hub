@@ -24,6 +24,9 @@ export interface Document {
   approval_status?: ApprovalStatus;
   approved_by?: string;
   approved_at?: string;
+  effective_date?: string;
+  review_date?: string;
+  expiry_date?: string;
 }
 
 export interface CAPA {

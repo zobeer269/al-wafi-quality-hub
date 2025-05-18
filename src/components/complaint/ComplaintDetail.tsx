@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -104,18 +105,36 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onStatus
     const ncData = await getNonConformances();
     const capaData = await fetchCAPAs();
     setNonConformances(ncData.filter(nc => nc.status !== 'Closed'));
-    setCAPAs(capaData.filter(capa => capa.status !== 'Closed'));
-  };
-
-  const loadCAPAData = async () => {
-    if (!showLinkCAPA) return;
-    
-    const capas = await fetchCAPAs();
     
     // Map the database fields to the CAPA interface
-    const formattedCapas: CAPA[] = mapDatabaseResponseToCAPAs(capas);
+    const formattedCAPAs: CAPA[] = capaData
+      .filter(capa => capa.status !== 'Closed')
+      .map(item => ({
+        id: item.id,
+        number: item.number,
+        title: item.title,
+        description: item.description,
+        type: item.capa_type as CAPAType,
+        priority: item.priority as CAPAPriority,
+        status: item.status as CAPAStatus,
+        createdDate: item.created_at,
+        dueDate: item.due_date,
+        assignedTo: item.assigned_to,
+        root_cause: item.root_cause,
+        action_plan: item.action_plan,
+        created_by: item.created_by,
+        closed_date: item.closed_date,
+        effectiveness_check_required: item.effectiveness_check_required,
+        effectiveness_verified: item.effectiveness_verified,
+        linked_nc_id: item.linked_nc_id,
+        linkedAuditFindingId: item.linked_audit_finding_id,
+        approval_status: item.approval_status,
+        approved_by: item.approved_by,
+        approved_at: item.approved_at,
+        tags: item.tags || []
+      }));
     
-    setCAPAs(formattedCapas);
+    setCAPAs(formattedCAPAs);
   };
 
   const handleAssign = async () => {

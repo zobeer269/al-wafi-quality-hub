@@ -123,9 +123,25 @@ export const createComplaint = async (complaintData: Partial<Complaint>) => {
       status: 'Open' as ComplaintStatus,
     };
     
+    // Extract only fields that exist in the database table
+    const dbComplaint = {
+      title: newComplaint.title,
+      description: newComplaint.description,
+      reference_number: newComplaint.reference_number || `COMP-${Date.now()}`,
+      source: newComplaint.source,
+      product_id: newComplaint.product_id,
+      batch_number: newComplaint.batch_number,
+      severity: newComplaint.severity,
+      status: newComplaint.status,
+      linked_nc_id: newComplaint.linked_nc_id,
+      linked_capa_id: newComplaint.linked_capa_id,
+      assigned_to: newComplaint.assigned_to,
+      reported_by: newComplaint.reported_by
+    };
+    
     const { data, error } = await supabase
       .from('complaints')
-      .insert([newComplaint])
+      .insert([dbComplaint])
       .select()
       .single();
     

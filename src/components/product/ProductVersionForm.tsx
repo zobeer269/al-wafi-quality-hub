@@ -1,389 +1,360 @@
-import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { 
+import React, { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { 
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
   Popover,
   PopoverContent,
-  PopoverTrigger
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ProductVersion } from "@/types/product";
-import { createProductVersion, updateProductVersion } from "@/services/productService";
-import { fetchDocuments } from "@/services/documentService";
-import { fetchCAPAs } from "@/services/capaService";
-import { CAPA } from "@/types/document";
-import { Document } from "@/types/document";
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { CAPA } from '@/types/document';
+import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
-const productVersionSchema = z.object({
-  version: z.string().min(1, "Version is required"),
+// Define the form schema
+const formSchema = z.object({
+  version: z.string().min(1, {
+    message: "Version is required",
+  }),
+  effective_date: z.date({
+    required_error: "Effective date is required",
+  }),
   changes_summary: z.string().optional(),
-  status: z.enum(["Draft", "Active", "Retired"]),
-  linked_sop_id: z.string().optional(),
   linked_capa_id: z.string().optional(),
-  effective_date: z.date().optional(),
+  linked_sop_id: z.string().optional(),
 });
 
-type ProductVersionFormValues = z.infer<typeof productVersionSchema>;
+// Define the form values type
+type ProductVersionFormValues = z.infer<typeof formSchema>;
+
+interface Document {
+  id: string;
+  number: string;
+  title: string;
+  type: string;
+  status: string;
+}
 
 interface ProductVersionFormProps {
   productId: string;
-  isOpen: boolean;
-  onClose: () => void;
-  initialData?: ProductVersion;
-  isEditing?: boolean;
-  onSuccess?: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
 const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
   productId,
-  isOpen,
-  onClose,
-  initialData,
-  isEditing = false,
-  onSuccess
+  onSuccess,
+  onCancel
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [capas, setCapas] = useState<CAPA[]>([]);
-
-  useEffect(() => {
-    const loadReferences = async () => {
-      // Load SOPs (filtered for documents of type SOP)
-      const docsData = await fetchDocuments();
-      setDocuments(docsData);
-      
-      // Load CAPAs
-      const capasData = await fetchCAPAs();
-      
-      // Map the database fields to match our CAPA interface
-      const formattedCapas: CAPA[] = mapDatabaseResponseToCAPAs(capasData);
-      
-      setCapas(formattedCapas);
-    };
-    
-    if (isOpen) {
-      loadReferences();
-    }
-  }, [isOpen]);
-
+  const [capas, setCAPAs] = useState<CAPA[]>([]);
+  const [loading, setLoading] = useState(false);
+  
   const form = useForm<ProductVersionFormValues>({
-    resolver: zodResolver(productVersionSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      version: initialData?.version || "",
-      changes_summary: initialData?.changes_summary || "",
-      status: initialData?.status || "Draft",
-      linked_sop_id: initialData?.linked_sop_id || undefined,
-      linked_capa_id: initialData?.linked_capa_id || undefined,
-      effective_date: initialData?.effective_date ? new Date(initialData.effective_date) : undefined,
+      version: "",
+      effective_date: new Date(),
+      changes_summary: "",
+      linked_capa_id: "",
+      linked_sop_id: "",
     },
   });
 
-  const onSubmit = async (values: ProductVersionFormValues) => {
-    setIsSubmitting(true);
-    
+  useEffect(() => {
+    fetchRelatedCAPAs();
+    fetchRelatedDocuments();
+  }, []);
+
+  const handleSubmit = async (values: ProductVersionFormValues) => {
+    setLoading(true);
     try {
-      const versionData = {
-        ...values,
-        product_id: productId,
-        effective_date: values.effective_date ? values.effective_date.toISOString() : undefined,
-        status: values.status,
-      };
-      
-      if (isEditing && initialData) {
-        await updateProductVersion(initialData.id, versionData as ProductVersion);
-      } else {
-        await createProductVersion(versionData as ProductVersion);
+      const { data, error } = await supabase
+        .from('product_versions')
+        .insert([
+          {
+            product_id: productId,
+            version: values.version,
+            effective_date: values.effective_date.toISOString(),
+            changes_summary: values.changes_summary,
+            linked_capa_id: values.linked_capa_id,
+            linked_sop_id: values.linked_sop_id,
+          },
+        ])
+        .select();
+
+      if (error) {
+        console.error("Error creating product version:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create product version",
+          variant: "destructive",
+        });
+        return;
       }
-      
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      onClose();
+
+      toast({
+        title: "Success",
+        description: "Product version created successfully",
+      });
+      onSuccess();
     } catch (error) {
-      console.error("Error submitting product version:", error);
+      console.error("Unexpected error:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
+  
+  const fetchRelatedCAPAs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('capas')
+        .select('*')
+        .eq('status', 'Closed')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const formattedData = data.map(item => ({
+        id: item.id,
+        number: item.number,
+        title: item.title,
+        description: item.description,
+        type: item.capa_type,
+        priority: item.priority,
+        status: item.status,
+        createdDate: item.created_at,
+        dueDate: item.due_date,
+        assignedTo: item.assigned_to,
+        root_cause: item.root_cause,
+        action_plan: item.action_plan,
+        created_by: item.created_by,
+        closed_date: item.closed_date
+      }));
+      
+      setCAPAs(formattedData);
+    } catch (error) {
+      console.error('Error fetching CAPAs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load CAPAs",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const fetchRelatedDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id, number, title, document_type, status')
+        .eq('document_type', 'SOP')
+        .eq('status', 'Approved')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setDocuments(data.map(doc => ({
+        id: doc.id,
+        number: doc.number,
+        title: doc.title,
+        type: doc.document_type,
+        status: doc.status
+      })));
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load SOPs",
+        variant: "destructive",
+      });
+    }
+  };
+  
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Edit Version" : "Add New Version"}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="version"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Version</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 1.0.0" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Version number or identifier
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Draft">Draft</SelectItem>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Retired">Retired</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {field.value === "Active" && "Only one version can be active at a time"}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="effective_date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Effective Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <Card>
+          <CardContent className="space-y-4">
+            <Tabs defaultValue="details" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="links">Links</TabsTrigger>
+              </TabsList>
+              <TabsContent value="details" className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="version"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Version</FormLabel>
                       <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                        <Input placeholder="1.0" {...field} />
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date(new Date().setHours(0, 0, 0, 0))
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    When this version becomes effective
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="changes_summary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Changes Summary</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Describe the changes in this version"
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="linked_sop_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Linked SOP</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a related SOP" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
-                      {documents.map((doc) => (
-                        <SelectItem key={doc.id} value={doc.id}>
-                          {doc.number} - {doc.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Optional: Link to a controlled document
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="linked_capa_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Linked CAPA</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a related CAPA" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
-                      {capas.map((capa) => (
-                        <SelectItem key={capa.id} value={capa.id}>
-                          {capa.number} - {capa.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Optional: Link to a CAPA if this change was caused by a deviation
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {isEditing ? "Update Version" : "Create Version"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="effective_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Effective Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-[240px] pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="changes_summary"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Changes Summary</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Summarize the changes in this version"
+                          className="resize-none"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Briefly describe the changes made in this version.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+
+              <TabsContent value="links">
+                <FormField
+                  control={form.control}
+                  name="linked_capa_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Linked CAPA</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a CAPA" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {capas.map((capa) => (
+                            <SelectItem key={capa.id} value={capa.id}>
+                              {capa.number} - {capa.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Link to a Corrective Action (CAPA) if applicable.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="linked_sop_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Linked SOP</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a SOP" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {documents.map((document) => (
+                            <SelectItem key={document.id} value={document.id}>
+                              {document.number} - {document.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Link to a Standard Operating Procedure (SOP) if applicable.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating..." : "Create Version"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 };
-
-// Import the correct types
-import { CAPA, CAPAType, CAPAPriority, CAPAStatus } from "@/types/document";
-
-// Use this mapper function to convert database response to CAPA type
-const mapDatabaseResponseToCAPAs = (data: any[]): CAPA[] => {
-  return data.map(item => ({
-    id: item.id,
-    number: item.number,
-    title: item.title,
-    description: item.description,
-    type: item.capa_type as CAPAType,
-    priority: item.priority as CAPAPriority,
-    status: item.status as CAPAStatus,
-    createdDate: item.created_at,
-    dueDate: item.due_date,
-    assignedTo: item.assigned_to,
-    root_cause: item.root_cause,
-    action_plan: item.action_plan,
-    created_by: item.created_by,
-    closed_date: item.closed_date,
-    effectiveness_check_required: item.effectiveness_check_required,
-    effectiveness_verified: item.effectiveness_verified,
-    linked_nc_id: item.linked_nc_id,
-    linkedAuditFindingId: item.linked_audit_finding_id,
-    approval_status: item.approval_status,
-    approved_by: item.approved_by,
-    approved_at: item.approved_at,
-    tags: item.tags || []
-  }));
-};
-
-// Replace the fetch function with this one in the component:
-/*
-const fetchLinkedCapas = async () => {
-  setLoading(true);
-  const { data, error } = await supabase
-    .from('capas')
-    .select('*')
-    .eq('linked_product_id', productId);
-    
-  if (!error && data) {
-    setCapas(mapDatabaseResponseToCAPAs(data));
-  }
-  setLoading(false);
-};
-*/
 
 export default ProductVersionForm;

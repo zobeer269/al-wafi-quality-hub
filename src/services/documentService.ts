@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Document, DocumentStatus } from "@/types/document";
 import { toast } from "@/components/ui/use-toast";
@@ -44,6 +43,9 @@ export const fetchDocuments = async () => {
       description: doc.description,
       content_url: doc.content_url,
       approved_by: doc.approved_by,
+      effective_date: doc.effective_date,
+      review_date: doc.review_date,
+      expiry_date: doc.expiry_date
     }));
   } catch (error) {
     console.error('Unexpected error:', error);

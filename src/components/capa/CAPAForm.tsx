@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -25,7 +24,7 @@ const formSchema = z.object({
   assignedTo: z.string().optional(),
   dueDate: z.string().optional(),
   linked_nc_id: z.string().optional(),
-  linked_audit_finding_id: z.string().optional(),
+  linkedAuditFindingId: z.string().optional(), // Updated to match our interface
   source: z.string().optional(),
   tags: z.array(z.string()).optional(),
   ai_notes: z.string().optional(),
@@ -63,18 +62,18 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      number: defaultCAPANumber,
-      title: defaultValues?.title || "",
+      number: defaultValues?.number || '',
+      title: defaultValues?.title || '',
       type: (defaultValues?.type as CAPAType) || "Corrective",
       priority: (defaultValues?.priority?.toString() as "1" | "2" | "3") || "2",
-      description: defaultValues?.description || "",
-      assignedTo: defaultValues?.assignedTo || "",
-      dueDate: defaultValues?.dueDate || "",
-      linked_nc_id: defaultValues?.linked_nc_id || "",
-      linked_audit_finding_id: defaultValues?.linked_audit_finding_id || "",
-      source: defaultValues?.source || linkedNC?.source || "",
+      description: defaultValues?.description || '',
+      assignedTo: defaultValues?.assignedTo || '',
+      dueDate: defaultValues?.dueDate || '',
+      linked_nc_id: defaultValues?.linked_nc_id || '',
+      linkedAuditFindingId: defaultValues?.linkedAuditFindingId || '', // Updated to match our interface
+      source: defaultValues?.source || linkedNC?.source || '',
       tags: defaultValues?.tags || [],
-      ai_notes: defaultValues?.ai_notes || "",
+      ai_notes: defaultValues?.ai_notes || '',
     }
   });
 
@@ -305,7 +304,7 @@ const CAPAForm: React.FC<CAPAFormProps> = ({
         
         {/* Hidden fields for linked items and AI data */}
         <input type="hidden" {...form.register("linked_nc_id")} />
-        <input type="hidden" {...form.register("linked_audit_finding_id")} />
+        <input type="hidden" {...form.register("linkedAuditFindingId")} /> {/* Updated to match our interface */}
         <input type="hidden" {...form.register("tags")} />
         <input type="hidden" {...form.register("ai_notes")} />
         

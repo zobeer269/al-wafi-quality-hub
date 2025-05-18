@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { CAPAPriority, priorityLabelMap } from '@/types/document';
+import { CAPAPriority, CAPAType, CAPAStatus, ApprovalStatus } from '@/types/document';
 
 export interface AuditFinding {
   id: string;
@@ -17,18 +17,19 @@ export interface CAPA {
   number: string;
   title: string;
   description: string;
-  capa_type: 'Corrective' | 'Preventive' | 'Both';
+  capa_type: CAPAType;
   priority: CAPAPriority;
-  status: string;
+  status: CAPAStatus;
   linked_nc_id?: string;
   linked_audit_finding_id?: string;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
   closed_date?: string;
-  approval_status?: string;
+  approval_status?: ApprovalStatus;
   approved_by?: string;
   approved_at?: string;
+  tags?: string[];
 }
 
 /**
@@ -73,14 +74,15 @@ export async function getOpenCAPAs(): Promise<CAPA[]> {
       number: capa.number,
       title: capa.title || `CAPA ${capa.number}`, // Fallback title
       description: capa.description,
-      capa_type: capa.capa_type,
+      capa_type: capa.capa_type as CAPAType,
       priority: capa.priority as CAPAPriority,
-      status: capa.status,
+      status: capa.status as CAPAStatus,
       linked_nc_id: capa.linked_nc_id,
       linked_audit_finding_id: capa.linked_audit_finding_id,
-      approval_status: capa.approval_status,
+      approval_status: capa.approval_status as ApprovalStatus,
       approved_by: capa.approved_by,
       approved_at: capa.approved_at,
+      tags: capa.tags || []
     }));
   } catch (error) {
     console.error('Exception fetching open CAPAs:', error);
@@ -109,14 +111,15 @@ export async function getCAPAById(id: string): Promise<CAPA | null> {
       number: data.number,
       title: data.title || `CAPA ${data.number}`,
       description: data.description,
-      capa_type: data.capa_type,
+      capa_type: data.capa_type as CAPAType,
       priority: data.priority as CAPAPriority,
-      status: data.status,
+      status: data.status as CAPAStatus,
       linked_nc_id: data.linked_nc_id,
       linked_audit_finding_id: data.linked_audit_finding_id,
-      approval_status: data.approval_status,
+      approval_status: data.approval_status as ApprovalStatus,
       approved_by: data.approved_by,
       approved_at: data.approved_at,
+      tags: data.tags || []
     };
   } catch (error) {
     console.error('Exception fetching CAPA by ID:', error);
@@ -219,14 +222,15 @@ export async function createCAPAFromNC(data: {
       number: capaData.number,
       title: capaData.title,
       description: capaData.description,
-      capa_type: capaData.capa_type,
+      capa_type: capaData.capa_type as CAPAType,
       priority: capaData.priority as CAPAPriority,
-      status: capaData.status,
+      status: capaData.status as CAPAStatus,
       linked_nc_id: capaData.linked_nc_id,
       linked_audit_finding_id: capaData.linked_audit_finding_id,
-      approval_status: capaData.approval_status,
+      approval_status: capaData.approval_status as ApprovalStatus,
       approved_by: capaData.approved_by,
       approved_at: capaData.approved_at,
+      tags: capaData.tags || []
     };
   } catch (error) {
     console.error('Exception creating CAPA:', error);
