@@ -21,6 +21,7 @@ import Change from "./pages/Change";
 import ChangeCreatePage from "./pages/change/ChangeCreatePage";
 import ChangeDetailPage from "./pages/change/ChangeDetailPage";
 import Training from "./pages/Training";
+import StagingAdmin from "./pages/StagingAdmin";
 
 export function App() {
   return (
@@ -46,6 +47,7 @@ export function App() {
         <Route path="/change/create" element={<ChangeCreatePage />} />
         <Route path="/change/:id" element={<ChangeDetailPage />} />
         <Route path="/training" element={<Training />} />
+        <Route path="/staging-admin" element={<StagingAdmin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

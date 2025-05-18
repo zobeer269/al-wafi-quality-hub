@@ -1,4 +1,3 @@
-
 export type DocumentStatus = "Draft" | "In Review" | "Approved" | "Obsolete";
 export type CAPAStatus = "Open" | "Investigation" | "In Progress" | "Closed";
 export type CAPAType = "Corrective" | "Preventive" | "Both";
@@ -31,20 +30,20 @@ export interface CAPA {
   number: string;
   title: string;
   description: string;
-  type: CAPAType;
+  type: CAPAType;  // matches capa_type in database
   priority: CAPAPriority;
   status: CAPAStatus;
-  createdDate: string;
-  dueDate?: string;
-  assignedTo?: string;
+  createdDate: string;  // matches created_at in database
+  dueDate?: string;     // matches due_date in database
+  assignedTo?: string;  // matches assigned_to in database
   root_cause?: string;
   action_plan?: string;
-  created_by?: string;
+  created_by: string;
   closed_date?: string;
   effectiveness_check_required?: boolean;
   effectiveness_verified?: boolean;
   linked_nc_id?: string;
-  linkedAuditFindingId?: string;
+  linkedAuditFindingId?: string;  // matches linked_audit_finding_id in database
   approval_status?: ApprovalStatus;
   approved_by?: string;
   approved_at?: string;

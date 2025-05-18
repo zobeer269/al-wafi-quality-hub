@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CAPA, CAPAStatus, CAPAPriority, ApprovalStatus, CAPAType } from "@/types/document";
 import { toast } from "@/components/ui/use-toast";
@@ -50,7 +51,7 @@ export const createCAPA = async (capaData: CAPAInput) => {
       description: capaData.description || '',
       priority: capaData.priority || 2,
       capa_type: capaData.type || 'Corrective',
-      status: 'Open',
+      status: capaData.status || 'Open',
       action_plan: capaData.action_plan || null,
       root_cause: capaData.root_cause || null,
       due_date: capaData.dueDate || null,
@@ -66,7 +67,7 @@ export const createCAPA = async (capaData: CAPAInput) => {
     
     const { data, error } = await supabase
       .from('capas')
-      .insert(newCAPA)
+      .insert([newCAPA])
       .select()
       .single();
     

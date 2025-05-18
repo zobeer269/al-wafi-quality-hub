@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import CAPAList from "@/components/capa/CAPAList";
 import CAPADetail from "@/components/capa/CAPADetail";
 import CAPAForm from "@/components/capa/CAPAForm";
-import { CAPA } from "@/types/document";
+import { CAPA, CAPAType, CAPAPriority, CAPAStatus } from "@/types/document";
 import { fetchCAPAs, createCAPA, getCAPAStatistics } from "@/services/capaService";
 import StatusCard from "@/components/dashboard/StatusCard";
 

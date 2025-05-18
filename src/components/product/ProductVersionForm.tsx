@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -87,30 +86,7 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
       const capasData = await fetchCAPAs();
       
       // Map the database fields to match our CAPA interface
-      const formattedCapas: CAPA[] = capasData.map(item => ({
-        id: item.id,
-        number: item.number,
-        title: item.title,
-        description: item.description,
-        type: item.capa_type as CAPAType,
-        priority: item.priority as CAPAPriority,
-        status: item.status as CAPAStatus,
-        createdDate: item.created_at,
-        dueDate: item.due_date,
-        assignedTo: item.assigned_to,
-        root_cause: item.root_cause,
-        action_plan: item.action_plan,
-        created_by: item.created_by,
-        closed_date: item.closed_date,
-        effectiveness_check_required: item.effectiveness_check_required,
-        effectiveness_verified: item.effectiveness_verified,
-        linked_nc_id: item.linked_nc_id,
-        linkedAuditFindingId: item.linked_audit_finding_id,
-        approval_status: item.approval_status,
-        approved_by: item.approved_by,
-        approved_at: item.approved_at,
-        tags: item.tags || []
-      }));
+      const formattedCapas: CAPA[] = mapDatabaseResponseToCAPAs(capasData);
       
       setCapas(formattedCapas);
     };
@@ -362,5 +338,52 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
     </Dialog>
   );
 };
+
+// Import the correct types
+import { CAPA, CAPAType, CAPAPriority, CAPAStatus } from "@/types/document";
+
+// Use this mapper function to convert database response to CAPA type
+const mapDatabaseResponseToCAPAs = (data: any[]): CAPA[] => {
+  return data.map(item => ({
+    id: item.id,
+    number: item.number,
+    title: item.title,
+    description: item.description,
+    type: item.capa_type as CAPAType,
+    priority: item.priority as CAPAPriority,
+    status: item.status as CAPAStatus,
+    createdDate: item.created_at,
+    dueDate: item.due_date,
+    assignedTo: item.assigned_to,
+    root_cause: item.root_cause,
+    action_plan: item.action_plan,
+    created_by: item.created_by,
+    closed_date: item.closed_date,
+    effectiveness_check_required: item.effectiveness_check_required,
+    effectiveness_verified: item.effectiveness_verified,
+    linked_nc_id: item.linked_nc_id,
+    linkedAuditFindingId: item.linked_audit_finding_id,
+    approval_status: item.approval_status,
+    approved_by: item.approved_by,
+    approved_at: item.approved_at,
+    tags: item.tags || []
+  }));
+};
+
+// Replace the fetch function with this one in the component:
+/*
+const fetchLinkedCapas = async () => {
+  setLoading(true);
+  const { data, error } = await supabase
+    .from('capas')
+    .select('*')
+    .eq('linked_product_id', productId);
+    
+  if (!error && data) {
+    setCapas(mapDatabaseResponseToCAPAs(data));
+  }
+  setLoading(false);
+};
+*/
 
 export default ProductVersionForm;

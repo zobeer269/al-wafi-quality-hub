@@ -36,8 +36,8 @@ export const fetchChangeControls = async (filters: {
       query = query.eq('status', filters.status);
     }
     
-    if (filters.affected_area && filters.affected_area !== 'all') {
-      query = query.eq('affected_area', filters.affected_area);
+    if (filters.area && filters.area !== 'all') {
+      query = query.eq('affected_area', filters.area);
     }
   }
 
