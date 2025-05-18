@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -21,11 +21,12 @@ import DocumentDetail from './DocumentDetail';
 interface DocumentListProps {
   documents: Document[];
   onFilterStatus?: (status: DocumentStatus | null) => void;
+  onRefresh?: () => Promise<void>;
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus }) => {
+const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus, onRefresh }) => {
   const [filterStatus, setFilterStatus] = useState<DocumentStatus | null>(null);
-	const [showDetail, setShowDetail] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
   const handleStatusClick = (status: DocumentStatus) => {
@@ -51,10 +52,16 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus }
     }
   };
 
-  // Fix the document prop to use documentId instead
   const handleViewDocument = (document: Document) => {
     setSelectedDocumentId(document.id);
     setShowDetail(true);
+  };
+  
+  const handleStatusChange = async () => {
+    if (onRefresh) {
+      await onRefresh();
+    }
+    setShowDetail(false);
   };
 
   return (
@@ -95,13 +102,12 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus }
           </TableRow>
         )}
       </TableBody>
-			{showDetail && selectedDocumentId && (
+      {showDetail && selectedDocumentId && (
         <Dialog open={showDetail} onOpenChange={setShowDetail}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
             <DocumentDetail 
               documentId={selectedDocumentId} 
-              onClose={() => setShowDetail(false)}
-              onStatusChange={() => {}}
+              onStatusChange={handleStatusChange}
             />
           </DialogContent>
         </Dialog>
@@ -110,5 +116,5 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus }
   );
 };
 
-// Change from default export to named export to match import statements
+// Export as named export
 export { DocumentList };
