@@ -43,9 +43,9 @@ const CAPAPage = () => {
       number: item.number,
       title: item.title,
       description: item.description,
-      type: item.type,
-      priority: item.priority as 1 | 2 | 3,
-      status: item.status,
+      type: item.capa_type as CAPAType,
+      priority: item.priority as CAPAPriority,
+      status: item.status as CAPAStatus,
       createdDate: item.created_at,
       dueDate: item.due_date,
       assignedTo: item.assigned_to,
@@ -88,17 +88,17 @@ const CAPAPage = () => {
         <StatusCard 
           title="Open CAPAs" 
           value={stats.open} 
-          variant="default"
+          className="bg-blue-50"
         />
         <StatusCard 
           title="In Progress" 
           value={stats.inProgress} 
-          variant="blue"
+          className="bg-amber-50"
         />
         <StatusCard 
           title="Closed" 
           value={stats.closed} 
-          variant="green"
+          className="bg-green-50"
         />
       </div>
       

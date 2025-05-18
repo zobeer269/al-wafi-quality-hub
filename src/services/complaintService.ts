@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Complaint, ComplaintFilters, ComplaintStatus } from "@/types/complaint";
 import { toast } from "@/components/ui/use-toast";
@@ -8,11 +7,7 @@ export const fetchComplaints = async (filters?: ComplaintFilters) => {
   try {
     let query = supabase
       .from('complaints')
-      .select(`
-        *,
-        products:product_id (id, name, sku)
-      `)
-      .order('reported_at', { ascending: false });
+      .select('*, products:product_id (id, name, sku)');
     
     if (filters) {
       // Apply filters if they are provided
@@ -37,6 +32,8 @@ export const fetchComplaints = async (filters?: ComplaintFilters) => {
       }
     }
     
+    query = query.order('reported_at', { ascending: false });
+    
     const { data, error } = await query;
     
     if (error) {
@@ -49,7 +46,7 @@ export const fetchComplaints = async (filters?: ComplaintFilters) => {
       return [];
     }
     
-    return data as Complaint[];
+    return data as unknown as Complaint[];
   } catch (error) {
     console.error('Unexpected error fetching complaints:', error);
     return [];

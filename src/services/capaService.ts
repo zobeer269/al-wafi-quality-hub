@@ -1,12 +1,11 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { CAPA, CAPAStatus, CAPAPriority, ApprovalStatus } from "@/types/document";
+import { CAPA, CAPAStatus, CAPAPriority, ApprovalStatus, CAPAType } from "@/types/document";
 import { toast } from "@/components/ui/use-toast";
 
 export interface CAPAInput {
   title: string;
   description: string;
-  type: string;
+  type: CAPAType;
   priority: CAPAPriority;
   status?: CAPAStatus;
   dueDate?: string;
@@ -34,30 +33,7 @@ export const fetchCAPAs = async () => {
       return [];
     }
     
-    return data.map((capa) => ({
-      id: capa.id,
-      number: capa.number,
-      title: capa.title,
-      description: capa.description,
-      priority: capa.priority,
-      status: capa.status,
-      type: capa.capa_type,
-      created_at: capa.created_at,
-      action_plan: capa.action_plan,
-      root_cause: capa.root_cause,
-      created_by: capa.created_by,
-      assigned_to: capa.assigned_to,
-      due_date: capa.due_date,
-      closed_date: capa.closed_date,
-      effectiveness_check_required: capa.effectiveness_check_required,
-      effectiveness_verified: capa.effectiveness_verified,
-      linked_nc_id: capa.linked_nc_id,
-      linked_audit_finding_id: capa.linked_audit_finding_id,
-      approval_status: capa.approval_status,
-      approved_by: capa.approved_by,
-      approved_at: capa.approved_at,
-      tags: capa.tags
-    }));
+    return data || [];
   } catch (error) {
     console.error('Error fetching CAPAs:', error);
     return [];
@@ -134,7 +110,7 @@ function generateCAPANumber(): string {
 // Update an existing CAPA
 export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
   try {
-    const updates = {
+    const updates: any = {
       title: capaData.title,
       description: capaData.description,
       priority: capaData.priority,
@@ -145,6 +121,7 @@ export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {
       due_date: capaData.dueDate,
       assigned_to: capaData.assignedTo,
       linked_nc_id: capaData.linked_nc_id,
+      linked_audit_finding_id: capaData.linkedAuditFindingId,
       effectiveness_check_required: capaData.effectiveness_check_required,
       effectiveness_verified: capaData.effectiveness_verified,
       closed_date: capaData.status === 'Closed' ? new Date().toISOString() : capaData.closed_date,

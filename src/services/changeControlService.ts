@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -32,12 +31,14 @@ export const fetchChangeControls = async (filters: {
   let query = supabase.from("change_controls").select("*");
 
   // Apply filters if provided and not set to "all"
-  if (filters.status && filters.status !== "all") {
-    query = query.eq("status", filters.status);
-  }
-
-  if (filters.area && filters.area !== "all") {
-    query = query.eq("affected_area", filters.area);
+  if (filters) {
+    if (filters.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status);
+    }
+    
+    if (filters.affected_area && filters.affected_area !== 'all') {
+      query = query.eq('affected_area', filters.affected_area);
+    }
   }
 
   // Order by creation date (most recent first)
