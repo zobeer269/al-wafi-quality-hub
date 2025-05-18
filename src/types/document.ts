@@ -44,12 +44,12 @@ export interface CAPA {
   effectiveness_check_required?: boolean;
   effectiveness_verified?: boolean;
   linked_nc_id?: string;
-  linked_audit_finding_id?: string;
+  linkedAuditFindingId?: string;
   approval_status?: ApprovalStatus;
   approved_by?: string;
   approved_at?: string;
-  tags?: string[]; // New field for AI tags
-  ai_notes?: string; // New field for AI-generated notes
+  tags?: string[];
+  ai_notes?: string;
 }
 
 export interface Signature {

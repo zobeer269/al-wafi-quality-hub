@@ -38,13 +38,13 @@ const CAPAPage = () => {
     setLoading(true);
     const data = await fetchCAPAs();
     // Convert database response to CAPA type
-    const formattedData = data.map(item => ({
+    const formattedData: CAPA[] = data.map(item => ({
       id: item.id,
       number: item.number,
       title: item.title,
       description: item.description,
       type: item.type,
-      priority: item.priority,
+      priority: item.priority as 1 | 2 | 3,
       status: item.status,
       createdDate: item.created_at,
       dueDate: item.due_date,
@@ -56,10 +56,11 @@ const CAPAPage = () => {
       effectiveness_check_required: item.effectiveness_check_required,
       effectiveness_verified: item.effectiveness_verified,
       linked_nc_id: item.linked_nc_id,
-      linked_audit_finding_id: item.linked_audit_finding_id,
+      linkedAuditFindingId: item.linked_audit_finding_id,
       approval_status: item.approval_status,
       approved_by: item.approved_by,
-      approved_at: item.approved_at
+      approved_at: item.approved_at,
+      tags: item.tags || []
     }));
     setCAPAs(formattedData);
     setLoading(false);
@@ -87,19 +88,16 @@ const CAPAPage = () => {
         <StatusCard 
           title="Open CAPAs" 
           value={stats.open} 
-          description="Require investigation" 
           variant="default"
         />
         <StatusCard 
           title="In Progress" 
           value={stats.inProgress} 
-          description="Under implementation" 
           variant="blue"
         />
         <StatusCard 
           title="Closed" 
           value={stats.closed} 
-          description="Completed actions" 
           variant="green"
         />
       </div>

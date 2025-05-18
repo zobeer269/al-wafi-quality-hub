@@ -42,16 +42,17 @@ export const fetchCAPAs = async () => {
       priority: capa.priority,
       status: capa.status,
       type: capa.capa_type,
-      createdDate: capa.created_at,
+      created_at: capa.created_at,
       action_plan: capa.action_plan,
       root_cause: capa.root_cause,
       created_by: capa.created_by,
-      assignedTo: capa.assigned_to,
-      dueDate: capa.due_date,
+      assigned_to: capa.assigned_to,
+      due_date: capa.due_date,
       closed_date: capa.closed_date,
       effectiveness_check_required: capa.effectiveness_check_required,
       effectiveness_verified: capa.effectiveness_verified,
       linked_nc_id: capa.linked_nc_id,
+      linked_audit_finding_id: capa.linked_audit_finding_id,
       approval_status: capa.approval_status,
       approved_by: capa.approved_by,
       approved_at: capa.approved_at,
@@ -80,14 +81,16 @@ export const createCAPA = async (capaData: CAPAInput) => {
       created_by: userData.user?.id || '',
       assigned_to: capaData.assignedTo || null,
       linked_nc_id: capaData.linked_nc_id || null,
+      linked_audit_finding_id: capaData.linked_audit_finding_id || null,
       effectiveness_check_required: capaData.effectiveness_check_required || false,
       effectiveness_verified: false,
-      tags: capaData.tags || []
+      tags: capaData.tags || [],
+      number: generateCAPANumber()
     };
     
     const { data, error } = await supabase
       .from('capas')
-      .insert([newCAPA])
+      .insert(newCAPA)
       .select()
       .single();
     
@@ -117,6 +120,16 @@ export const createCAPA = async (capaData: CAPAInput) => {
     return null;
   }
 };
+
+// Helper function to generate a CAPA number
+function generateCAPANumber(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const random = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+  return `CAPA-${year}${month}${day}-${random}`;
+}
 
 // Update an existing CAPA
 export const updateCAPA = async (id: string, capaData: Partial<CAPA>) => {

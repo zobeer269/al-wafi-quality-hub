@@ -107,7 +107,6 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus, 
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
             <DocumentDetail 
               documentId={selectedDocumentId} 
-              onStatusChange={handleStatusChange}
             />
           </DialogContent>
         </Dialog>

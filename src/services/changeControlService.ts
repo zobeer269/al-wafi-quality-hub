@@ -26,8 +26,8 @@ export interface ChangeControl {
 
 // Fetch change controls with optional filters
 export const fetchChangeControls = async (filters: {
-  status?: ChangeControlStatus;
-  area?: AffectedArea;
+  status?: ChangeControlStatus | "all";
+  area?: AffectedArea | "all";
 } = {}) => {
   let query = supabase.from("change_controls").select("*");
 

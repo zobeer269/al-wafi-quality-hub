@@ -34,8 +34,8 @@ const ChangeControlList: React.FC = () => {
   const [changeControls, setChangeControls] = useState<ChangeControl[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<{
-    status?: ChangeControlStatus;
-    area?: AffectedArea;
+    status?: ChangeControlStatus | "all";
+    area?: AffectedArea | "all";
   }>({});
 
   useEffect(() => {
@@ -67,7 +67,7 @@ const ChangeControlList: React.FC = () => {
           
           <Select
             value={filters.status}
-            onValueChange={(value: ChangeControlStatus | undefined) => 
+            onValueChange={(value: ChangeControlStatus | "all" | undefined) => 
               setFilters(prev => ({ ...prev, status: value || undefined }))
             }
           >
@@ -86,7 +86,7 @@ const ChangeControlList: React.FC = () => {
           
           <Select
             value={filters.area}
-            onValueChange={(value: AffectedArea | undefined) => 
+            onValueChange={(value: AffectedArea | "all" | undefined) => 
               setFilters(prev => ({ ...prev, area: value || undefined }))
             }
           >
