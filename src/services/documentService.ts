@@ -43,14 +43,52 @@ export const fetchDocuments = async () => {
       lastUpdated: new Date(doc.updated_at).toISOString().split('T')[0],
       description: doc.description,
       content_url: doc.content_url,
-      // These properties aren't in the database type, removed them
-      // approval_status: doc.approval_status,
       approved_by: doc.approved_by,
-      // approved_at: doc.approved_at,
     }));
   } catch (error) {
     console.error('Unexpected error:', error);
     return [];
+  }
+};
+
+export const fetchDocumentById = async (id: string): Promise<Document | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching document by id:', error);
+      toast({
+        title: "Error fetching document",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    if (!data) return null;
+    
+    return {
+      id: data.id,
+      number: data.number,
+      title: data.title,
+      type: data.document_type,
+      version: data.version,
+      status: data.status,
+      lastUpdated: new Date(data.updated_at).toISOString().split('T')[0],
+      description: data.description,
+      content_url: data.content_url,
+      approved_by: data.approved_by,
+      effective_date: data.effective_date,
+      review_date: data.review_date,
+      expiry_date: data.expiry_date,
+    };
+  } catch (error) {
+    console.error('Unexpected error fetching document:', error);
+    return null;
   }
 };
 
