@@ -1,5 +1,9 @@
 
 import React from 'react';
-import Sidebar from '@/components/Sidebar';
+import SidebarComponent from '@/components/Sidebar';
 
-export { Sidebar };
+// Export the Sidebar as a named export for easier imports from layouts
+export const Sidebar = SidebarComponent;
+
+// Also export as default for backward compatibility
+export default SidebarComponent;

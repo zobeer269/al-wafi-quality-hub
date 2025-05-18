@@ -9,7 +9,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import { Sidebar } from "@/components/Sidebar";
+import SidebarComponent from "@/components/Sidebar";
 import { MobileNav } from "./MobileNav";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { NotificationDropdown } from "./NotificationDropdown";
@@ -29,7 +29,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <MobileNav />
 
       {/* Sidebar */}
-      <Sidebar />
+      <SidebarComponent />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -49,7 +49,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   Navigate through the QMS platform.
                 </SheetDescription>
               </SheetHeader>
-              <Sidebar isMobile={true} />
+              <SidebarComponent />
             </SheetContent>
           </Sheet>
 

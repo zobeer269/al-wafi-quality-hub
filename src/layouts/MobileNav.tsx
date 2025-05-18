@@ -2,7 +2,7 @@
 import React from 'react';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import { Sidebar } from './Sidebar';
+import SidebarComponent from '@/components/Sidebar';
 
 export const MobileNav = () => {
   return (
@@ -15,7 +15,7 @@ export const MobileNav = () => {
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72">
-          <Sidebar isMobile={true} />
+          <SidebarComponent />
         </SheetContent>
       </Sheet>
     </div>
