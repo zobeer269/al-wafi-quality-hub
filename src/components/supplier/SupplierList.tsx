@@ -93,7 +93,7 @@ const SupplierList = ({ suppliers, isLoading, onAddClick, onFilterChange }: Supp
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Approved">Approved</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
               <SelectItem value="Suspended">Suspended</SelectItem>
@@ -105,7 +105,7 @@ const SupplierList = ({ suppliers, isLoading, onAddClick, onFilterChange }: Supp
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {supplierCategories.map(category => (
                 <SelectItem key={category} value={category}>{category}</SelectItem>
               ))}

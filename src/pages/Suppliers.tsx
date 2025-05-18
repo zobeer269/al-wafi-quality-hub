@@ -38,8 +38,8 @@ const Suppliers: React.FC = () => {
 
   const filteredSuppliers = suppliers.filter(supplier => {
     return (
-      (filters.status === '' || supplier.status === filters.status) &&
-      (filters.category === '' || supplier.category === filters.category) &&
+      (filters.status === '' || filters.status === 'all' || supplier.status === filters.status) &&
+      (filters.category === '' || filters.category === 'all' || supplier.category === filters.category) &&
       (filters.search === '' || 
         supplier.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         (supplier.contact_email && supplier.contact_email.toLowerCase().includes(filters.search.toLowerCase())))

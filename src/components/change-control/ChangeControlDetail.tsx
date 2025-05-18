@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const ChangeControlDetail = () => {
+export const ChangeControlDetail = () => {
   const [isQAOrAdmin, setIsQAOrAdmin] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [canReview, setCanReview] = useState(false);
@@ -26,9 +26,9 @@ const ChangeControlDetail = () => {
       
       if (rolesData) {
         const userRoles = rolesData.map(r => r.role);
-        // Check if user has any role that can review
+        // Check if user has any role that can review - fixed the comparison here
         const canReview = userRoles.some(role => 
-          ['admin', 'qa', 'manager'].includes(role)
+          ['admin', 'qa', 'manager'].includes(role.toLowerCase())
         );
         setCanReview(canReview);
       }
@@ -39,6 +39,3 @@ const ChangeControlDetail = () => {
 
   return <div>Change Control Detail</div>;
 };
-
-// Export as named export instead of default
-export { ChangeControlDetail };
