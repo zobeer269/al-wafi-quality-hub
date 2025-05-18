@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import CAPAList from "@/components/capa/CAPAList";
 import CAPADetail from "@/components/capa/CAPADetail";
 import CAPAForm from "@/components/capa/CAPAForm";
-import { CAPA, CAPAType, CAPAPriority, CAPAStatus } from "@/types/document";
+import { CAPA, CAPAType, CAPAPriority, CAPAStatus, ApprovalStatus } from "@/types/document";
 import { fetchCAPAs, createCAPA, getCAPAStatistics } from "@/services/capaService";
 import StatusCard from "@/components/dashboard/StatusCard";
 
@@ -57,10 +57,11 @@ const CAPAPage = () => {
       effectiveness_verified: item.effectiveness_verified,
       linked_nc_id: item.linked_nc_id,
       linkedAuditFindingId: item.linked_audit_finding_id,
-      approval_status: item.approval_status,
+      approval_status: item.approval_status as ApprovalStatus,
       approved_by: item.approved_by,
       approved_at: item.approved_at,
-      tags: item.tags || []
+      tags: item.tags || [],
+      ai_notes: item.ai_notes
     }));
     setCAPAs(formattedData);
     setLoading(false);

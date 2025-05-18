@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Complaint, ComplaintFilters, ComplaintStatus } from "@/types/complaint";
 import { toast } from "@/components/ui/use-toast";
@@ -32,7 +31,7 @@ const toComplaint = (data: any): Complaint => {
   };
 };
 
-// Fetch complaints with optional filters
+// Update the fetch complaints function to use our safe converter
 export const fetchComplaints = async (filters?: ComplaintFilters) => {
   try {
     let query = supabase
@@ -83,7 +82,7 @@ export const fetchComplaints = async (filters?: ComplaintFilters) => {
   }
 };
 
-// Fetch a single complaint by ID
+// Fetch a single complaint by ID - update to use our safe converter
 export const fetchComplaintById = async (id: string) => {
   try {
     const { data, error } = await supabase

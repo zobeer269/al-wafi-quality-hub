@@ -35,7 +35,7 @@ import { fetchComplaintById, assignComplaint, closeComplaint, linkComplaint } fr
 import { fetchCAPAs } from '@/services/capaService';
 import { getNonConformances } from '@/services/nonConformanceService';
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA, CAPAType, CAPAPriority, CAPAStatus } from '@/types/document';
+import { CAPA, CAPAType, CAPAPriority, CAPAStatus, ApprovalStatus } from '@/types/document';
 import { NonConformance } from '@/types/nonConformance';
 import { formatDate } from '@/lib/utils';
 
@@ -128,7 +128,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({ complaintId, onStatus
         effectiveness_verified: item.effectiveness_verified,
         linked_nc_id: item.linked_nc_id,
         linkedAuditFindingId: item.linked_audit_finding_id,
-        approval_status: item.approval_status,
+        approval_status: item.approval_status as ApprovalStatus,
         approved_by: item.approved_by,
         approved_at: item.approved_at,
         tags: item.tags || []

@@ -23,7 +23,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { CAPA } from '@/types/document';
+import { CAPA, CAPAType, CAPAPriority, CAPAStatus } from '@/types/document';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -56,12 +56,16 @@ interface ProductVersionFormProps {
   productId: string;
   onSuccess: () => void;
   onCancel: () => void;
+  initialData?: any;
+  isEditing?: boolean;
 }
 
 const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
   productId,
   onSuccess,
-  onCancel
+  onCancel,
+  initialData,
+  isEditing = false
 }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [capas, setCAPAs] = useState<CAPA[]>([]);
@@ -70,11 +74,11 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
   const form = useForm<ProductVersionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      version: "",
-      effective_date: new Date(),
-      changes_summary: "",
-      linked_capa_id: "",
-      linked_sop_id: "",
+      version: initialData?.version || "",
+      effective_date: initialData?.effective_date ? new Date(initialData.effective_date) : new Date(),
+      changes_summary: initialData?.changes_summary || "",
+      linked_capa_id: initialData?.linked_capa_id || "",
+      linked_sop_id: initialData?.linked_sop_id || "",
     },
   });
 
@@ -86,25 +90,51 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
   const handleSubmit = async (values: ProductVersionFormValues) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('product_versions')
-        .insert([
-          {
-            product_id: productId,
-            version: values.version,
-            effective_date: values.effective_date.toISOString(),
-            changes_summary: values.changes_summary,
-            linked_capa_id: values.linked_capa_id,
-            linked_sop_id: values.linked_sop_id,
-          },
-        ])
-        .select();
-
-      if (error) {
-        console.error("Error creating product version:", error);
+      const userData = await supabase.auth.getUser();
+      const userId = userData.data.user?.id;
+      
+      if (!userId) {
         toast({
           title: "Error",
-          description: "Failed to create product version",
+          description: "User not authenticated",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const dataToSubmit = {
+        product_id: productId,
+        version: values.version,
+        effective_date: values.effective_date.toISOString(),
+        changes_summary: values.changes_summary,
+        linked_capa_id: values.linked_capa_id || null,
+        linked_sop_id: values.linked_sop_id || null,
+        created_by: userId
+      };
+      
+      let response;
+      
+      if (isEditing && initialData?.id) {
+        response = await supabase
+          .from('product_versions')
+          .update(dataToSubmit)
+          .eq('id', initialData.id)
+          .select();
+      } else {
+        response = await supabase
+          .from('product_versions')
+          .insert(dataToSubmit)
+          .select();
+      }
+
+      const { error } = response;
+
+      if (error) {
+        console.error("Error with product version:", error);
+        toast({
+          title: "Error",
+          description: isEditing ? "Failed to update product version" : "Failed to create product version",
           variant: "destructive",
         });
         return;
@@ -112,7 +142,7 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
 
       toast({
         title: "Success",
-        description: "Product version created successfully",
+        description: isEditing ? "Product version updated successfully" : "Product version created successfully",
       });
       onSuccess();
     } catch (error) {
@@ -137,21 +167,29 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
       
       if (error) throw error;
       
-      const formattedData = data.map(item => ({
+      const formattedData: CAPA[] = data.map(item => ({
         id: item.id,
         number: item.number,
         title: item.title,
         description: item.description,
-        type: item.capa_type,
-        priority: item.priority,
-        status: item.status,
+        type: item.capa_type as CAPAType,
+        priority: item.priority as CAPAPriority,
+        status: item.status as CAPAStatus,
         createdDate: item.created_at,
         dueDate: item.due_date,
         assignedTo: item.assigned_to,
         root_cause: item.root_cause,
         action_plan: item.action_plan,
         created_by: item.created_by,
-        closed_date: item.closed_date
+        closed_date: item.closed_date,
+        effectiveness_check_required: item.effectiveness_check_required,
+        effectiveness_verified: item.effectiveness_verified,
+        linked_nc_id: item.linked_nc_id,
+        linkedAuditFindingId: item.linked_audit_finding_id,
+        approval_status: item.approval_status,
+        approved_by: item.approved_by,
+        approved_at: item.approved_at,
+        tags: item.tags || []
       }));
       
       setCAPAs(formattedData);
