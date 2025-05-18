@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -109,4 +110,5 @@ const DocumentList: React.FC<DocumentListProps> = ({ documents, onFilterStatus }
   );
 };
 
-export default DocumentList;
+// Change from default export to named export to match import statements
+export { DocumentList };
