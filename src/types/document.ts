@@ -1,3 +1,4 @@
+
 export type DocumentStatus = "Draft" | "In Review" | "Approved" | "Obsolete";
 export type CAPAStatus = "Open" | "Investigation" | "In Progress" | "Closed";
 export type CAPAType = "Corrective" | "Preventive" | "Both";

@@ -390,6 +390,97 @@ export type Database = {
           },
         ]
       }
+      complaints: {
+        Row: {
+          assigned_to: string | null
+          batch_number: string | null
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          description: string
+          id: string
+          justification: string | null
+          linked_capa_id: string | null
+          linked_nc_id: string | null
+          product_id: string | null
+          reference_number: string
+          reported_at: string
+          reported_by: string
+          resolution_notes: string | null
+          severity: string
+          source: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          batch_number?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          justification?: string | null
+          linked_capa_id?: string | null
+          linked_nc_id?: string | null
+          product_id?: string | null
+          reference_number: string
+          reported_at?: string
+          reported_by: string
+          resolution_notes?: string | null
+          severity: string
+          source: string
+          status: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          batch_number?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          justification?: string | null
+          linked_capa_id?: string | null
+          linked_nc_id?: string | null
+          product_id?: string | null
+          reference_number?: string
+          reported_at?: string
+          reported_by?: string
+          resolution_notes?: string | null
+          severity?: string
+          source?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_linked_capa_id_fkey"
+            columns: ["linked_capa_id"]
+            isOneToOne: false
+            referencedRelation: "capas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_linked_nc_id_fkey"
+            columns: ["linked_nc_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_history: {
         Row: {
           content_url: string | null

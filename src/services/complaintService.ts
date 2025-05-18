@@ -1,6 +1,36 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Complaint, ComplaintFilters, ComplaintStatus } from "@/types/complaint";
 import { toast } from "@/components/ui/use-toast";
+
+// Helper function to safely convert database response to Complaint type
+const toComplaint = (data: any): Complaint => {
+  if (!data) return null as unknown as Complaint;
+  
+  return {
+    id: data.id || '',
+    reference_number: data.reference_number || '',
+    title: data.title || '',
+    description: data.description || '',
+    source: data.source || '',
+    product_id: data.product_id || undefined,
+    product: data.products || undefined,
+    batch_number: data.batch_number || undefined,
+    severity: data.severity || 'Medium',
+    status: data.status || 'Open',
+    linked_nc_id: data.linked_nc_id || undefined,
+    linked_capa_id: data.linked_capa_id || undefined,
+    assigned_to: data.assigned_to || undefined,
+    reported_by: data.reported_by || '',
+    reported_at: data.reported_at || new Date().toISOString(),
+    closed_at: data.closed_at || undefined,
+    closed_by: data.closed_by || undefined,
+    resolution_notes: data.resolution_notes || undefined,
+    justification: data.justification || undefined,
+    created_at: data.created_at || new Date().toISOString(),
+    updated_at: data.updated_at || new Date().toISOString()
+  };
+};
 
 // Fetch complaints with optional filters
 export const fetchComplaints = async (filters?: ComplaintFilters) => {
@@ -46,7 +76,7 @@ export const fetchComplaints = async (filters?: ComplaintFilters) => {
       return [];
     }
     
-    return data as unknown as Complaint[];
+    return (data || []).map(item => toComplaint(item));
   } catch (error) {
     console.error('Unexpected error fetching complaints:', error);
     return [];
@@ -75,7 +105,7 @@ export const fetchComplaintById = async (id: string) => {
       return null;
     }
     
-    return data as Complaint;
+    return toComplaint(data);
   } catch (error) {
     console.error('Unexpected error fetching complaint:', error);
     return null;
@@ -114,7 +144,7 @@ export const createComplaint = async (complaintData: Partial<Complaint>) => {
       description: `Complaint ${data.reference_number} created successfully`,
     });
     
-    return data as Complaint;
+    return toComplaint(data);
   } catch (error) {
     console.error('Unexpected error creating complaint:', error);
     toast({
@@ -151,7 +181,7 @@ export const updateComplaint = async (id: string, complaintData: Partial<Complai
       description: `Complaint ${data.reference_number} updated successfully`,
     });
     
-    return data as Complaint;
+    return toComplaint(data);
   } catch (error) {
     console.error('Unexpected error updating complaint:', error);
     toast({
@@ -192,7 +222,7 @@ export const assignComplaint = async (id: string, userId: string) => {
       description: `Complaint assigned successfully`,
     });
     
-    return data as Complaint;
+    return toComplaint(data);
   } catch (error) {
     console.error('Error assigning complaint:', error);
     toast({
@@ -242,7 +272,7 @@ export const closeComplaint = async (
       description: `Complaint closed successfully`,
     });
     
-    return data as Complaint;
+    return toComplaint(data);
   } catch (error) {
     console.error('Error closing complaint:', error);
     toast({
@@ -290,7 +320,7 @@ export const linkComplaint = async (
       description: `Complaint linked successfully`,
     });
     
-    return data as Complaint;
+    return toComplaint(data);
   } catch (error) {
     console.error('Error linking complaint:', error);
     toast({

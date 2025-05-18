@@ -34,7 +34,7 @@ import { fetchComplaintById, assignComplaint, closeComplaint, linkComplaint } fr
 import { fetchCAPAs } from '@/services/capaService';
 import { getNonConformances } from '@/services/nonConformanceService';
 import { supabase } from '@/integrations/supabase/client';
-import { CAPA } from '@/types/document';
+import { CAPA, CAPAType, CAPAPriority, CAPAStatus } from '@/types/document';
 import { NonConformance } from '@/types/nonConformance';
 import { formatDate } from '@/lib/utils';
 
