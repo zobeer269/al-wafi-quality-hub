@@ -2,181 +2,180 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export type ChangeControlStatus = 'Open' | 'Under Review' | 'Approved' | 'Rejected' | 'Implemented';
-export type RiskRating = 'Low' | 'Medium' | 'High';
-export type AffectedArea = 'Process' | 'Product' | 'Document' | 'Supplier' | 'System';
+// Define types
+export type RiskRating = "Low" | "Medium" | "High";
+export type AffectedArea = "Process" | "Product" | "Document" | "Supplier" | "System";
+export type ChangeControlStatus = "Open" | "Under Review" | "Approved" | "Rejected" | "Implemented";
 
 export interface ChangeControl {
   id: string;
   title: string;
   change_reason: string;
-  initiator: string;
   affected_area: AffectedArea;
-  linked_document_id?: string;
-  linked_product_id?: string;
-  linked_risk_id?: string;
-  status: ChangeControlStatus;
   impact_assessment?: string;
   risk_rating?: RiskRating;
+  implementation_plan?: string;
+  status: ChangeControlStatus;
+  initiator: string;
   reviewed_by?: string;
   approved_by?: string;
-  implementation_plan?: string;
   implementation_date?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface ChangeControlHistory {
-  id: string;
-  change_control_id: string;
-  status: ChangeControlStatus;
-  comments?: string;
-  changed_by: string;
-  created_at?: string;
-}
-
-export async function fetchChangeControls(filters: {
+// Fetch change controls with optional filters
+export const fetchChangeControls = async (filters: {
   status?: ChangeControlStatus;
   area?: AffectedArea;
-  fromDate?: string;
-  toDate?: string;
-} = {}) {
-  try {
-    let query = supabase
-      .from("change_controls")
-      .select("*");
-    
-    if (filters.status) {
-      query = query.eq("status", filters.status);
-    }
-    
-    if (filters.area) {
-      query = query.eq("affected_area", filters.area);
-    }
-    
-    if (filters.fromDate) {
-      query = query.gte("created_at", filters.fromDate);
-    }
-    
-    if (filters.toDate) {
-      query = query.lte("created_at", filters.toDate);
-    }
-    
-    const { data, error } = await query.order("created_at", { ascending: false });
-    
-    if (error) {
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
+} = {}) => {
+  let query = supabase.from("change_controls").select("*");
+
+  // Apply filters if provided and not set to "all"
+  if (filters.status && filters.status !== "all") {
+    query = query.eq("status", filters.status);
+  }
+
+  if (filters.area && filters.area !== "all") {
+    query = query.eq("affected_area", filters.area);
+  }
+
+  // Order by creation date (most recent first)
+  query = query.order("created_at", { ascending: false });
+
+  const { data, error } = await query;
+
+  if (error) {
     console.error("Error fetching change controls:", error);
-    toast.error("Failed to fetch change controls");
+    toast.error("Failed to load change controls");
     return [];
   }
-}
 
-export async function fetchChangeControlById(id: string) {
-  try {
-    const { data, error } = await supabase
-      .from("change_controls")
-      .select("*")
-      .eq("id", id)
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Error fetching change control:", error);
-    toast.error("Failed to fetch change control details");
-    return null;
+  return data as ChangeControl[];
+};
+
+// Fetch a single change control by ID
+export const fetchChangeControlById = async (id: string) => {
+  const { data, error } = await supabase
+    .from("change_controls")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching change control ${id}:`, error);
+    toast.error("Failed to load change control details");
+    throw error;
   }
-}
 
-export async function fetchChangeControlHistory(changeControlId: string) {
-  try {
-    const { data, error } = await supabase
-      .from("change_control_history")
-      .select("*")
-      .eq("change_control_id", changeControlId)
-      .order("created_at", { ascending: true });
-    
-    if (error) {
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Error fetching change control history:", error);
-    toast.error("Failed to fetch history");
-    return [];
-  }
-}
+  return data as ChangeControl;
+};
 
-export async function createChangeControl(changeControl: Omit<ChangeControl, 'id' | 'status' | 'created_at' | 'updated_at'>) {
-  try {
-    const { data, error } = await supabase
-      .from("change_controls")
-      .insert(changeControl)
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    toast.success("Change control created successfully");
-    return data;
-  } catch (error) {
+// Create a new change control
+export const createChangeControl = async (
+  changeControl: Omit<ChangeControl, "id" | "status" | "created_at" | "updated_at">
+) => {
+  // Set initial status
+  const newChangeControl = {
+    ...changeControl,
+    status: "Open" as ChangeControlStatus,
+  };
+
+  const { data, error } = await supabase
+    .from("change_controls")
+    .insert([newChangeControl])
+    .select()
+    .single();
+
+  if (error) {
     console.error("Error creating change control:", error);
-    toast.error("Failed to create change control");
-    return null;
+    toast.error("Failed to create change request");
+    throw error;
   }
-}
 
-export async function updateChangeControl(id: string, changes: Partial<ChangeControl>) {
-  try {
-    const { data, error } = await supabase
-      .from("change_controls")
-      .update(changes)
-      .eq("id", id)
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    toast.success("Change control updated successfully");
-    return data;
-  } catch (error) {
+  toast.success("Change request created successfully");
+  return data as ChangeControl;
+};
+
+// Update an existing change control
+export const updateChangeControl = async (
+  id: string,
+  updates: Partial<ChangeControl>
+) => {
+  const { data, error } = await supabase
+    .from("change_controls")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
     console.error("Error updating change control:", error);
-    toast.error("Failed to update change control");
-    return null;
+    toast.error("Failed to update change request");
+    throw error;
   }
-}
 
-export async function submitForReview(id: string) {
-  return updateChangeControl(id, { status: 'Under Review' });
-}
+  toast.success("Change request updated successfully");
+  return data as ChangeControl;
+};
 
-export async function approveChangeControl(id: string, userId: string) {
-  return updateChangeControl(id, { 
-    status: 'Approved',
-    approved_by: userId
-  });
-}
+// Update the status of a change control
+export const updateChangeControlStatus = async (
+  id: string,
+  status: ChangeControlStatus,
+  userId: string,
+  comments?: string
+) => {
+  // First update the change control status
+  const { data, error } = await supabase
+    .from("change_controls")
+    .update({ status })
+    .eq("id", id)
+    .select()
+    .single();
 
-export async function rejectChangeControl(id: string) {
-  return updateChangeControl(id, { status: 'Rejected' });
-}
+  if (error) {
+    console.error("Error updating change control status:", error);
+    toast.error("Failed to update change request status");
+    throw error;
+  }
 
-export async function implementChangeControl(id: string) {
-  return updateChangeControl(id, { 
-    status: 'Implemented',
-    implementation_date: new Date().toISOString()
-  });
-}
+  // Then record the status change in history
+  const { error: historyError } = await supabase
+    .from("change_control_history")
+    .insert([
+      {
+        change_control_id: id,
+        status,
+        changed_by: userId,
+        comments,
+      },
+    ]);
+
+  if (historyError) {
+    console.error("Error recording change control history:", historyError);
+  }
+
+  toast.success(`Change request ${status.toLowerCase()} successfully`);
+  return data as ChangeControl;
+};
+
+// Fetch the history of a change control
+export const fetchChangeControlHistory = async (id: string) => {
+  const { data, error } = await supabase
+    .from("change_control_history")
+    .select(`
+      *,
+      profiles:changed_by (first_name, last_name)
+    `)
+    .eq("change_control_id", id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching change control history:", error);
+    toast.error("Failed to load change history");
+    return [];
+  }
+
+  return data;
+};

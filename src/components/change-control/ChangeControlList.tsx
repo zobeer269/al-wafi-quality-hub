@@ -75,7 +75,7 @@ const ChangeControlList: React.FC = () => {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="Open">Open</SelectItem>
               <SelectItem value="Under Review">Under Review</SelectItem>
               <SelectItem value="Approved">Approved</SelectItem>
@@ -94,7 +94,7 @@ const ChangeControlList: React.FC = () => {
               <SelectValue placeholder="Area" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Areas</SelectItem>
+              <SelectItem value="all">All Areas</SelectItem>
               <SelectItem value="Process">Process</SelectItem>
               <SelectItem value="Product">Product</SelectItem>
               <SelectItem value="Document">Document</SelectItem>
