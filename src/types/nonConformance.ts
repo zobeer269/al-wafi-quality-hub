@@ -31,8 +31,8 @@ export interface NonConformance {
   updated_at: string;
   closed_at?: string;
   capa_required?: boolean;
-  tags?: string[]; // New field for AI tags
-  ai_notes?: string; // New field for AI-generated notes
+  tags?: string[]; // For AI tags
+  ai_notes?: string; // For AI-generated notes
 }
 
 export interface NonConformanceAttachment {
@@ -53,7 +53,7 @@ export interface NonConformanceFilters {
   assignedTo?: string | 'all';
   dateFrom?: string;
   dateTo?: string;
-  tags?: string[]; // New field for filtering by AI tags
+  tags?: string[]; // For filtering by AI tags
 }
 
 export interface NonConformanceSummary {

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { 
   NonConformance, 
@@ -115,58 +114,35 @@ export async function getNonConformanceById(id: string): Promise<NonConformance 
   }
 }
 
-export async function createNonConformance(nonConformance: CreateNonConformanceData): Promise<NonConformance | null> {
+export async function createNonConformance(nonConformanceData: Partial<NonConformance>): Promise<NonConformance | null> {
   try {
-    // Generate AI tags and notes if not provided
-    if (!nonConformance.tags) {
-      nonConformance.tags = generateSmartTags(
-        nonConformance.description, 
-        nonConformance.severity, 
-        nonConformance.source
-      );
+    // Ensure we have the required fields
+    if (!nonConformanceData.title || !nonConformanceData.description || !nonConformanceData.severity) {
+      throw new Error('Missing required fields');
     }
-    
-    if (!nonConformance.ai_notes) {
-      nonConformance.ai_notes = generateAINotes({
-        ...nonConformance,
-        id: '',  // Placeholder
-        nc_number: '',  // Placeholder
-        reported_by: nonConformance.reported_by,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: nonConformance.status || 'Open'
-      });
-    }
-    
-    // We need to explicitly cast using 'as any' to bypass TypeScript's strict checking
-    // because Supabase's database trigger generates the nc_number
-    const { data, error } = await supabase
+
+    // Set default values
+    const data = {
+      ...nonConformanceData,
+      tags: nonConformanceData.tags || [], // Ensure tags is initialized as an array
+      reported_date: nonConformanceData.reported_date || new Date().toISOString(),
+      status: nonConformanceData.status || 'Open',
+    };
+
+    const { data: newNC, error } = await supabase
       .from('non_conformances')
-      .insert({
-        ...nonConformance,
-        status: 'Open'
-      } as any)
+      .insert([data])
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating non-conformance:', error);
-      toast({
-        title: "Error",
-        description: `Failed to create non-conformance: ${error.message}`,
-        variant: "destructive"
-      });
-      throw new Error(error.message);
+      console.error('Error creating NC:', error);
+      return null;
     }
 
-    toast({
-      title: "Success",
-      description: `Non-conformance ${data.nc_number} created successfully`
-    });
-
-    return data as NonConformance;
+    return newNC;
   } catch (error) {
-    console.error('Error in createNonConformance:', error);
+    console.error('Error creating NC:', error);
     return null;
   }
 }
@@ -258,6 +234,25 @@ export async function deleteNonConformance(id: string): Promise<boolean> {
   } catch (error) {
     console.error('Error in deleteNonConformance:', error);
     return false;
+  }
+}
+
+export async function fetchNonConformanceSummary(): Promise<NonConformanceSummary[]> {
+  try {
+    // Use the non_conformance_summary view
+    const { data, error } = await supabase
+      .from('non_conformance_summary')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching NC summary:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching NC summary:', error);
+    return [];
   }
 }
 

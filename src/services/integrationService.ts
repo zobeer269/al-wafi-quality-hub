@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { CAPAPriority, CAPAType, CAPAStatus, ApprovalStatus } from '@/types/document';
 
@@ -12,7 +11,7 @@ export interface AuditFinding {
   due_date?: string | null;
 }
 
-// This interface matches database schema
+// This interface matches database schema exactly
 export interface CAPA {
   id: string;
   number: string;
@@ -68,7 +67,7 @@ export async function getOpenAuditFindings(): Promise<AuditFinding[]> {
 function mapDatabaseCAPAToFrontend(capa: CAPA): import('@/types/document').CAPA {
   return {
     id: capa.id,
-    number: capa.number,
+    number: capa.number || `CAPA ${capa.id.substring(0, 6)}`, // Fallback title
     title: capa.title || `CAPA ${capa.number}`, // Fallback title
     description: capa.description,
     type: capa.capa_type,

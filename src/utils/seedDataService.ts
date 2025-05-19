@@ -249,3 +249,105 @@ async function createUserRoles(roles: { user_id: string; role: string }[]): Prom
     console.error('Error in createUserRoles:', error);
   }
 }
+
+export async function seedCAPAData() {
+  console.log("Seeding CAPA data...");
+
+  try {
+    const existingCapas = await supabase
+      .from('capas')
+      .select('*');
+
+    if (existingCapas.data && existingCapas.data.length > 0) {
+      console.log(`Found ${existingCapas.data.length} existing CAPAs, skipping seed`);
+      return;
+    }
+
+    // Get a user to assign as creator
+    const { data: user } = await supabase.auth.getUser();
+    const userId = user?.user?.id || '00000000-0000-0000-0000-000000000000';
+
+    // Create some sample CAPAs with the right structure to match the database
+    const capaItems = [
+      {
+        number: 'CAPA-20250101-1001',
+        title: 'CAPA for Process Deviation',
+        description: 'Corrective action required for manufacturing process deviation',
+        capa_type: 'Corrective' as CAPAType,
+        priority: 3 as CAPAPriority,
+        status: 'Open' as const,
+        assigned_to: userId,
+        created_by: userId,
+        due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        tags: ['process', 'deviation']
+      },
+      {
+        number: 'CAPA-20250101-1002',
+        title: 'CAPA for Equipment Calibration',
+        description: 'Preventive action for equipment calibration processes',
+        capa_type: 'Preventive' as CAPAType,
+        priority: 2 as CAPAPriority,
+        status: 'Investigation' as const,
+        assigned_to: userId,
+        created_by: userId,
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        tags: ['equipment', 'calibration']
+      }
+    ];
+
+    // Insert CAPAs one by one to avoid type issues
+    for (const capa of capaItems) {
+      const { error } = await supabase
+        .from('capas')
+        .insert(capa);
+      
+      if (error) {
+        console.error("Error inserting CAPA:", error);
+      }
+    }
+
+    console.log("CAPA data seeded successfully!");
+  } catch (error) {
+    console.error("Error seeding CAPA data:", error);
+  }
+}
+
+export async function seedUserRoles() {
+  console.log("Seeding user roles data...");
+
+  try {
+    const existingRoles = await supabase
+      .from('user_roles')
+      .select('*');
+
+    if (existingRoles.data && existingRoles.data.length > 0) {
+      console.log(`Found ${existingRoles.data.length} existing user roles, skipping seed`);
+      return;
+    }
+
+    // Get the current user to assign roles
+    const { data: user } = await supabase.auth.getUser();
+    const userId = user?.user?.id;
+
+    if (userId) {
+      // Insert admin role for current user
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: 'admin'
+        });
+      
+      if (error) {
+        console.error("Error inserting user role:", error);
+      } else {
+        console.log(`Added admin role to user ${userId}`);
+      }
+    } else {
+      console.log("No authenticated user found, skipping user roles seed");
+    }
+
+  } catch (error) {
+    console.error("Error seeding user roles:", error);
+  }
+}

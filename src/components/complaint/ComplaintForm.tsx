@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
-import { fetchProducts } from '@/services/productService';
+import { getProducts } from '@/services/productService';
 import { createComplaint } from '@/services/complaintService';
 import { Product } from '@/types/product';
 import { ComplaintSeverity, ComplaintSource } from '@/types/complaint';
@@ -35,7 +34,7 @@ const ComplaintForm: React.FC = () => {
 
   useEffect(() => {
     const loadProducts = async () => {
-      const data = await fetchProducts();
+      const data = await getProducts();
       setProducts(data);
     };
     loadProducts();

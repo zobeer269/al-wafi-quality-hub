@@ -1,7 +1,6 @@
-import { CAPA } from "@/types/document";
-import { NonConformance } from "@/types/nonConformance";
-import { CAPA, CAPAPriority, CAPAStatus } from '@/types/document';
-import { NonConformanceSeverity } from '@/types/nonConformance';
+import { CAPAType, CAPAPriority } from '@/types/document';
+import { NonConformance } from '@/types/nonConformance';
+import { CAPA as CAPA_Interface } from '@/types/document';
 
 /**
  * AI-powered priority suggestion for CAPAs
@@ -120,7 +119,7 @@ export function generateSmartTags(
  * Generate AI notes based on analysis
  */
 export function generateAINotes(
-  item: NonConformance | CAPA,
+  item: NonConformance | CAPA_Interface,
   daysOpen?: number,
   similarIssues?: number
 ): string {
@@ -128,7 +127,7 @@ export function generateAINotes(
   
   // Priority suggestion if it's a CAPA and has a priority
   if ('priority' in item) {
-    const capa = item as CAPA;
+    const capa = item as CAPA_Interface;
     const priorityText = capa.priority === 3 ? 'High' : capa.priority === 2 ? 'Medium' : 'Low';
     notes.push(`Suggested Priority: ${priorityText}`);
   }
@@ -158,15 +157,15 @@ export function generateAINotes(
 /**
  * Check for overdue items
  */
-export function checkOverdueItems(items: (CAPA | NonConformance)[], daysThreshold: number = 10): (CAPA | NonConformance)[] {
+export function checkOverdueItems(items: (CAPA_Interface | NonConformance)[], daysThreshold: number = 10): (CAPA_Interface | NonConformance)[] {
   const today = new Date();
   
   return items.filter(item => {
     if (item.status === 'Closed') return false;
     
     // If there's a due date, check if it's past due
-    if (item.dueDate) {
-      const dueDate = new Date(item.dueDate);
+    if (item.due_date) {
+      const dueDate = new Date(item.due_date);
       const diffTime = today.getTime() - dueDate.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays > daysThreshold;
@@ -183,7 +182,7 @@ export function checkOverdueItems(items: (CAPA | NonConformance)[], daysThreshol
 /**
  * Filter items by tags
  */
-export function filterByTags(items: (CAPA | NonConformance)[], filterTags: string[]): (CAPA | NonConformance)[] {
+export function filterByTags(items: (CAPA_Interface | NonConformance)[], filterTags: string[]): (CAPA_Interface | NonConformance)[] {
   if (!filterTags || filterTags.length === 0) return items;
   
   return items.filter(item => {
@@ -195,7 +194,7 @@ export function filterByTags(items: (CAPA | NonConformance)[], filterTags: strin
 /**
  * Generate risk score based on item's properties
  */
-export function generateRiskScore(item: CAPA | NonConformance): number {
+export function generateRiskScore(item: CAPA_Interface | NonConformance): number {
   let score = 0;
 
   // Base score calculation
@@ -247,4 +246,16 @@ export function generateRiskScore(item: CAPA | NonConformance): number {
   }
 
   return score;
+}
+
+/**
+ * Check if an item is overdue based on its due date
+ */
+export function isOverdue(item: NonConformance | CAPA_Interface): boolean {
+  if (!item.due_date) return false;
+  
+  const dueDate = new Date(item.due_date);
+  const today = new Date();
+  
+  return dueDate < today;
 }

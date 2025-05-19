@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarCheck, Clock, Edit, FileText, UploadCloud, User, Clipboard, AlertCircle, LinkIcon } from 'lucide-react';
@@ -28,9 +27,11 @@ import { toast } from '@/hooks/use-toast';
 
 interface NCDetailProps {
   nonConformance: NonConformance;
+  onClose?: () => void;
+  onUpdate?: (updatedNC: NonConformance) => void;
 }
 
-const NCDetail: React.FC<NCDetailProps> = ({ nonConformance }) => {
+const NCDetail: React.FC<NCDetailProps> = ({ nonConformance, onClose, onUpdate }) => {
   const navigate = useNavigate();
   const [attachments, setAttachments] = useState<NonConformanceAttachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -39,6 +40,7 @@ const NCDetail: React.FC<NCDetailProps> = ({ nonConformance }) => {
   const [fileDescription, setFileDescription] = useState('');
   const [linkedCAPA, setLinkedCAPA] = useState<CAPA | null>(null);
   const [linkedFinding, setLinkedFinding] = useState<AuditFinding | null>(null);
+  const [creatingCapa, setCreatingCapa] = useState(false);
   
   useEffect(() => {
     const loadData = async () => {
@@ -103,6 +105,47 @@ const NCDetail: React.FC<NCDetailProps> = ({ nonConformance }) => {
       console.error('Error uploading attachment:', error);
     } finally {
       setIsUploading(false);
+    }
+  };
+  
+  const handleCreateCAPA = async () => {
+    try {
+      setCreatingCapa(true);
+      
+      // Create CAPA from NC
+      const capaData = await createCAPAFromNC({
+        title: nonConformance.title,
+        description: nonConformance.description,
+        severity: nonConformance.severity,
+        nc_id: nonConformance.id,
+        reported_by: nonConformance.reported_by,
+      });
+      
+      if (capaData && onUpdate) {
+        // Map the returned CAPA to our frontend CAPA type if needed
+        setCapa(capaData);
+        
+        // Update the NC with the linked CAPA
+        const updatedNC = {
+          ...nonConformance,
+          linked_capa_id: capaData.id,
+          capa_required: true
+        };
+        
+        await updateNCField(nonConformance.id, 'linked_capa_id', capaData.id);
+        await updateNCField(nonConformance.id, 'capa_required', true);
+        
+        onUpdate(updatedNC);
+      }
+    } catch (error) {
+      console.error('Error creating CAPA:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create CAPA",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingCapa(false);
     }
   };
   

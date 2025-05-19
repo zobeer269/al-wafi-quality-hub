@@ -5,7 +5,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import ProductDetail from '@/components/product/ProductDetail';
 import { Product } from '@/types/product';
-import { getProductById } from '@/services/productService';
+import { fetchProductById } from '@/services/productService';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const ProductDetailPage: React.FC = () => {
@@ -24,7 +24,7 @@ const ProductDetailPage: React.FC = () => {
 
       try {
         setLoading(true);
-        const productData = await getProductById(id);
+        const productData = await fetchProductById(id);
         
         if (productData) {
           setProduct(productData);

@@ -1,206 +1,162 @@
-
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
+import React, { useState } from 'react';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Product, ProductFilters } from "@/types/product";
-import { fetchProducts, getProductCategories, getProductManufacturers } from "@/services/productService";
-import { formatDate } from "@/lib/utils";
-import { Loader2, PlusCircle } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { Product, ProductStatus, ProductFilters } from '@/types/product';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const ProductList = () => {
-  const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<ProductFilters>({
-    status: "all",
-    category: "all",
-    manufacturer: "all",
-  });
-  const [categories, setCategories] = useState<string[]>([]);
-  const [manufacturers, setManufacturers] = useState<string[]>([]);
+interface ProductListProps {
+  products?: Product[];
+  onSelectProduct: (product: Product) => void;
+  onFilterChange?: (filters: ProductFilters) => void;
+}
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const productsData = await fetchProducts(filters);
-      setProducts(productsData);
-      setLoading(false);
-    };
+// Replace the fetchProducts reference with getProducts
+const ProductList: React.FC<ProductListProps> = ({ products = [], onSelectProduct, onFilterChange }) => {
+  const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
 
-    loadData();
-  }, [filters]);
-
-  useEffect(() => {
-    const loadFilterOptions = async () => {
-      const categoriesData = await getProductCategories();
-      const manufacturersData = await getProductManufacturers();
-      setCategories(categoriesData);
-      setManufacturers(manufacturersData);
-    };
-
-    loadFilterOptions();
-  }, []);
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  const handleStatusChange = (status: ProductStatus | 'all') => {
+    setStatusFilter(status);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "In Development":
-        return <Badge variant="secondary">In Development</Badge>;
-      case "Approved":
-        return <Badge variant="default">Approved</Badge>;
-      case "Discontinued":
-        return <Badge variant="destructive">Discontinued</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+  const handleCategoryChange = (category: string) => {
+    setCategoryFilter(category);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleDateChange = (dates: { from?: Date; to?: Date }) => {
+    setDateRange(dates);
+  };
+
+  const applyFilters = () => {
+    if (onFilterChange) {
+      const filters: ProductFilters = {};
+      
+      if (statusFilter !== 'all') {
+        filters.status = statusFilter;
+      }
+      
+      if (categoryFilter) {
+        filters.category = categoryFilter;
+      }
+      
+      if (dateRange.from) {
+        filters.dateFrom = dateRange.from.toISOString();
+      }
+      
+      if (dateRange.to) {
+        filters.dateTo = dateRange.to.toISOString();
+      }
+      
+      onFilterChange(filters);
     }
   };
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Products</CardTitle>
-        <Button onClick={() => navigate("/products/create")}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1">
-            <label className="text-sm font-medium mb-1 block">Status</label>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => handleFilterChange("status", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="In Development">In Development</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Discontinued">Discontinued</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1">
-            <label className="text-sm font-medium mb-1 block">Category</label>
-            <Select
-              value={filters.category}
-              onValueChange={(value) => handleFilterChange("category", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1">
-            <label className="text-sm font-medium mb-1 block">Manufacturer</label>
-            <Select
-              value={filters.manufacturer}
-              onValueChange={(value) => handleFilterChange("manufacturer", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by manufacturer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Manufacturers</SelectItem>
-                {manufacturers.map((manufacturer) => (
-                  <SelectItem key={manufacturer} value={manufacturer}>
-                    {manufacturer}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+  const filteredProducts = products?.filter(product => {
+    const searchRegex = new RegExp(searchQuery, 'i');
+    return searchRegex.test(product.name) || searchRegex.test(product.sku);
+  });
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>SKU</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Manufacturer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <div className="flex justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : products.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    No products found. Create one to get started.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>{product.sku}</TableCell>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.category || "-"}</TableCell>
-                    <TableCell>{product.manufacturer || "-"}</TableCell>
-                    <TableCell>{getStatusBadge(product.status)}</TableCell>
-                    <TableCell>{formatDate(product.created_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/products/${product.id}`)}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+  return (
+    <div>
+      <div className="flex flex-wrap gap-4 mb-4">
+        <Input
+          type="text"
+          placeholder="Search by name or SKU..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          className="max-w-xs"
+        />
+
+        <Select onValueChange={(value) => handleStatusChange(value as ProductStatus | 'all')}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="In Development">In Development</SelectItem>
+            <SelectItem value="Pending Approval">Pending Approval</SelectItem>
+            <SelectItem value="Approved">Approved</SelectItem>
+            <SelectItem value="Released">Released</SelectItem>
+            <SelectItem value="Obsolete">Obsolete</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Input
+          type="text"
+          placeholder="Filter by Category..."
+          value={categoryFilter}
+          onChange={(e) => handleCategoryChange(e.target.value)}
+          className="max-w-xs"
+        />
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "justify-start text-left font-normal",
+                !dateRange.from && !dateRange.to ? "text-muted-foreground" : undefined
               )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange.from && dateRange.to ? (
+                format(dateRange.from, "yyyy-MM-dd") + " - " + format(dateRange.to, "yyyy-MM-dd")
+              ) : (
+                <span>Pick a date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="center">
+            <Calendar
+              mode="range"
+              defaultMonth={dateRange.from}
+              selected={dateRange}
+              onSelect={handleDateChange}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
+
+        <Button onClick={applyFilters}>Apply Filters</Button>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>SKU</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Manufacturer</TableHead>
+            <TableHead>Created At</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredProducts?.map((product) => (
+            <TableRow key={product.id} onClick={() => onSelectProduct(product)} className="cursor-pointer hover:bg-gray-100">
+              <TableCell>{product.name}</TableCell>
+              <TableCell>{product.sku}</TableCell>
+              <TableCell>{product.status}</TableCell>
+              <TableCell>{product.category}</TableCell>
+              <TableCell>{product.manufacturer}</TableCell>
+              <TableCell>{new Date(product.created_at).toLocaleDateString()}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

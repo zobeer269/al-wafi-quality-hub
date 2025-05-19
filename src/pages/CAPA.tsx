@@ -44,18 +44,7 @@ const CAPAPage: React.FC = () => {
   };
   
   const handleSelectCAPA = (capa: CAPA) => {
-    // Update CAPA object to match the expected type
-    const updatedCapa = {
-      ...capa,
-      linkedAuditFindingId: capa.linkedAuditFindingId,
-      approval_status: capa.approval_status,
-      approved_by: capa.approved_by,
-      approved_at: capa.approved_at,
-      tags: capa.tags || [],
-      ai_notes: capa.ai_notes
-    };
-    
-    // Handle CAPA selection
+    // Navigate to the CAPA detail page
     navigate(`/capa/${capa.id}`);
   };
   
@@ -82,13 +71,12 @@ const CAPAPage: React.FC = () => {
       <PageHeader
         title="CAPA Management"
         description="Manage Corrective and Preventive Actions"
-        action={
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New CAPA
-          </Button>
-        }
-      />
+      >
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          New CAPA
+        </Button>
+      </PageHeader>
 
       <Tabs defaultValue="active" className="w-full">
         <TabsList className="mb-4">
