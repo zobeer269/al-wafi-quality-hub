@@ -40,6 +40,10 @@ const CAPAPage: React.FC = () => {
     navigate('/capa/create');
   };
 
+  const handleSelectCAPA = (capa: CAPA) => {
+    navigate(`/capa/${capa.id}`);
+  };
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -61,7 +65,11 @@ const CAPAPage: React.FC = () => {
       </div>
 
       <Card>
-        <CAPAList capas={capas} loading={loading} />
+        <CAPAList 
+          capas={capas} 
+          loading={loading} 
+          onSelectCAPA={handleSelectCAPA} 
+        />
       </Card>
     </DashboardLayout>
   );

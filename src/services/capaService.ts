@@ -21,6 +21,65 @@ export interface CAPAInput {
   ai_notes?: string;
 }
 
+// Add the missing function to fetch all CAPAs
+export const getCAPAs = async (): Promise<CAPA[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('capas')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching CAPAs:', error);
+      toast({
+        title: "Error",
+        description: `Failed to fetch CAPAs: ${error.message}`,
+        variant: "destructive",
+      });
+      return [];
+    }
+    
+    // Map the database fields to our CAPA interface
+    const capas: CAPA[] = data.map(item => ({
+      id: item.id,
+      number: item.number,
+      title: item.title,
+      description: item.description,
+      type: item.capa_type,
+      priority: item.priority,
+      status: item.status,
+      createdDate: item.created_at,
+      dueDate: item.due_date,
+      assignedTo: item.assigned_to,
+      root_cause: item.root_cause,
+      action_plan: item.action_plan,
+      created_by: item.created_by,
+      closed_date: item.closed_date,
+      effectiveness_check_required: item.effectiveness_check_required,
+      effectiveness_verified: item.effectiveness_verified,
+      linked_nc_id: item.linked_nc_id,
+      linkedAuditFindingId: item.linked_audit_finding_id,
+      approval_status: item.approval_status,
+      approved_by: item.approved_by,
+      approved_at: item.approved_at,
+      tags: item.tags,
+      ai_notes: item.ai_notes,
+      updated_at: item.updated_at,
+      capa_type: item.capa_type
+    }));
+    
+    return capas;
+  } catch (error) {
+    console.error('Error in getCAPAs:', error);
+    toast({
+      title: "Error",
+      description: "An unexpected error occurred",
+      variant: "destructive",
+    });
+    return [];
+  }
+};
+
 // Fetch CAPAs for dropdown selection
 export const fetchCAPAs = async () => {
   try {

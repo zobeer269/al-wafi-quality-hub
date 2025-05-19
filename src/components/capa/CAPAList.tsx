@@ -3,16 +3,17 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { CAPAStatus, CAPAType, CAPA, CAPAPriority, priorityLabelMap } from '@/types/document';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CAPAListProps {
   capas: CAPA[];
-  onSelectCAPA: (capa: CAPA) => void;
+  onSelectCAPA?: (capa: CAPA) => void;
   onFilterStatus?: (status: CAPAStatus | null) => void;
+  loading?: boolean;
 }
 
-const CAPAList: React.FC<CAPAListProps> = ({ capas, onSelectCAPA, onFilterStatus }) => {
+const CAPAList: React.FC<CAPAListProps> = ({ capas, onSelectCAPA, onFilterStatus, loading = false }) => {
   const [filterStatus, setFilterStatus] = useState<CAPAStatus | null>(null);
   
   const handleStatusClick = (status: CAPAStatus) => {
@@ -51,6 +52,15 @@ const CAPAList: React.FC<CAPAListProps> = ({ capas, onSelectCAPA, onFilterStatus
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading CAPAs...</span>
+      </div>
+    );
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -68,7 +78,7 @@ const CAPAList: React.FC<CAPAListProps> = ({ capas, onSelectCAPA, onFilterStatus
       </TableHeader>
       <TableBody>
         {capas.map((capa) => (
-          <TableRow key={capa.id} className="cursor-pointer hover:bg-gray-100" onClick={() => onSelectCAPA(capa)}>
+          <TableRow key={capa.id} className="cursor-pointer hover:bg-gray-100" onClick={() => onSelectCAPA && onSelectCAPA(capa)}>
             <TableCell className="font-medium">{capa.number}</TableCell>
             <TableCell>{capa.title}</TableCell>
             <TableCell>{capa.type}</TableCell>
