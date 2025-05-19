@@ -12,12 +12,11 @@ export interface Complaint {
   reference_number: string;
   title: string;
   description: string;
-  source: ComplaintSource;
+  source: "Customer" | "Internal" | "Distributor" | "Inspector";
   product_id?: string | null;
-  product?: Product | null;
   batch_number?: string | null;
-  severity: ComplaintSeverity;
-  status: ComplaintStatus;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  status: "Open" | "Under Investigation" | "Resolved" | "Closed";
   linked_nc_id?: string | null;
   linked_capa_id?: string | null;
   assigned_to?: string | null;
@@ -31,6 +30,7 @@ export interface Complaint {
   updated_at: string;
 }
 
+
 export interface ComplaintFilters {
   status?: ComplaintStatus;
   severity?: ComplaintSeverity;
@@ -38,3 +38,32 @@ export interface ComplaintFilters {
   date_from?: string;
   date_to?: string;
 }
+
+export interface NonConformance {
+  id: string;
+  nc_number: string;
+  title: string;
+  description: string;
+  source: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  status: "Open" | "Investigation" | "Containment" | "Correction" | "Verification" | "Closed";
+  reported_by: string;
+  reported_date: string;
+  assigned_to?: string | null;
+  capa_required: boolean;
+  category: string;
+  containment_action?: string | null;
+  correction?: string | null;
+  immediate_action?: string | null;
+  final_action?: string | null;
+  linked_batch?: string | null;
+  linked_supplier_id?: string | null;
+  linked_capa_id?: string | null;
+  tags?: string[];
+  ai_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  closed_date?: string | null;
+  closed_by?: string | null;
+}
+

@@ -34,12 +34,12 @@ export interface CAPA {
   number: string;
   title: string;
   description: string;
-  type: CAPAType; // matches capa_type in database
-  priority: CAPAPriority; // Allow both number and CAPAPriority type
+  type: CAPAType; // matches capa_type in DB
+  priority: CAPAPriority;
   status: CAPAStatus;
-  createdDate: string; // matches created_at in database
-  dueDate?: string | null; // matches due_date in database
-  assignedTo?: string | null; // matches assigned_to in database
+  createdDate: string; // created_at
+  dueDate?: string | null;
+  assignedTo?: string | null;
   root_cause?: string | null;
   action_plan?: string | null;
   created_by: string;
@@ -47,13 +47,42 @@ export interface CAPA {
   effectiveness_check_required?: boolean;
   effectiveness_verified?: boolean;
   linked_nc_id?: string | null;
-  linkedAuditFindingId?: string | null; // matches linked_audit_finding_id in database
+  linkedAuditFindingId?: string | null;
   approval_status?: ApprovalStatus;
   approved_by?: string | null;
   approved_at?: string | null;
   tags?: string[];
   ai_notes?: string | null;
   updated_at?: string;
+  capa_type?: CAPAType; // optional alias if needed for service compatibility
+}
+
+export interface NonConformance {
+  id: string;
+  nc_number: string;
+  title: string;
+  description: string;
+  source: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  status: "Open" | "Investigation" | "Containment" | "Correction" | "Verification" | "Closed";
+  reported_by: string;
+  reported_date: string;
+  assigned_to?: string | null;
+  capa_required: boolean;
+  category: string;
+  containment_action?: string | null;
+  correction?: string | null;
+  immediate_action?: string | null;
+  final_action?: string | null;
+  linked_batch?: string | null;
+  linked_supplier_id?: string | null;
+  linked_capa_id?: string | null;
+  tags?: string[];
+  ai_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  closed_date?: string | null;
+  closed_by?: string | null;
 }
 
 export interface Signature {

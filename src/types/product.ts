@@ -36,10 +36,11 @@ export interface ProductVersion {
   product_id: string;
   version: string;
   changes_summary?: string;
-  status: "Draft" | "Approved" | "Obsolete";
   linked_capa_id?: string | null;
   linked_sop_id?: string | null;
   effective_date?: string | null;
+  status: string;
   created_at: string;
+  updated_at?: string;
   created_by: string;
 }
