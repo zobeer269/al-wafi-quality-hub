@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { Plus, History, Download, AlertCircle, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
-import { fetchProductById, fetchProductVersions } from '@/services/productService';
+import { fetchProductById, getProductVersions } from '@/services/productService';
 import { Product, ProductVersion } from '@/types/product';
 import { toast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -45,7 +44,7 @@ const ProductDetail = () => {
         
         setProduct(productData);
         
-        const versions = await fetchProductVersions(id);
+        const versions = await getProductVersions(id);
         setProductVersions(versions);
       } catch (error) {
         toast({
@@ -74,7 +73,7 @@ const ProductDetail = () => {
 
   const refreshProductVersions = async () => {
     if (!id) return;
-    const versions = await fetchProductVersions(id);
+    const versions = await getProductVersions(id);
     setProductVersions(versions);
   };
 
