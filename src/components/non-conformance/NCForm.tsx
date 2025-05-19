@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
-import { NonConformanceSeverity, NonConformanceStatus } from '@/types/nonConformance';
+import { NonConformance, NonConformanceSeverity, NonConformanceStatus } from '@/types/nonConformance';
 import { CAPA } from '@/types/document';
 import { getOpenCAPAs } from '@/services/integrationService';
 
@@ -41,6 +41,8 @@ interface NCFormProps {
   onCancel: () => void;
   defaultValues?: Partial<NCFormValues>;
   isLoading?: boolean;
+  initialData?: NonConformance;
+  isEditing?: boolean;
 }
 
 interface LinkedCAPAProps {
@@ -83,11 +85,15 @@ const NCForm: React.FC<NCFormProps> = ({
   onSubmit,
   onCancel,
   defaultValues,
-  isLoading = false
+  isLoading = false,
+  initialData,
+  isEditing = false
 }) => {
   const [capas, setCAPAs] = useState<CAPA[]>([]);
   const [linkedCAPA, setLinkedCAPA] = useState<CAPA | null>(null);
   const [linkedCAPAValue, setLinkedCAPAValue] = useState<string>("none");
+
+  const actualDefaultValues = initialData || defaultValues;
 
   useEffect(() => {
     const loadCAPAs = async () => {
@@ -120,24 +126,24 @@ const NCForm: React.FC<NCFormProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nc_number: defaultValues?.nc_number || '',
-      title: defaultValues?.title || '',
-      description: defaultValues?.description || '',
-      source: defaultValues?.source || '',
-      status: (defaultValues?.status as NonConformanceStatus) || "Open",
-      severity: (defaultValues?.severity as NonConformanceSeverity) || "Minor",
-      linked_batch: defaultValues?.linked_batch || '',
-      linked_supplier_id: defaultValues?.linked_supplier_id || '',
-      linked_capa_id: defaultValues?.linked_capa_id || '',
-      linked_audit_finding_id: defaultValues?.linked_audit_finding_id || '',
-      root_cause: defaultValues?.root_cause || '',
-      immediate_action: defaultValues?.immediate_action || '',
-      final_action: defaultValues?.final_action || '',
-      assigned_to: defaultValues?.assigned_to || '',
-      due_date: defaultValues?.due_date || '',
-      capa_required: defaultValues?.capa_required || false,
-      tags: defaultValues?.tags || [],
-      ai_notes: defaultValues?.ai_notes || '',
+      nc_number: actualDefaultValues?.nc_number || '',
+      title: actualDefaultValues?.title || '',
+      description: actualDefaultValues?.description || '',
+      source: actualDefaultValues?.source || '',
+      status: (actualDefaultValues?.status as NonConformanceStatus) || "Open",
+      severity: (actualDefaultValues?.severity as NonConformanceSeverity) || "Minor",
+      linked_batch: actualDefaultValues?.linked_batch || '',
+      linked_supplier_id: actualDefaultValues?.linked_supplier_id || '',
+      linked_capa_id: actualDefaultValues?.linked_capa_id || '',
+      linked_audit_finding_id: actualDefaultValues?.linked_audit_finding_id || '',
+      root_cause: actualDefaultValues?.root_cause || '',
+      immediate_action: actualDefaultValues?.immediate_action || '',
+      final_action: actualDefaultValues?.final_action || '',
+      assigned_to: actualDefaultValues?.assigned_to || '',
+      due_date: actualDefaultValues?.due_date || '',
+      capa_required: actualDefaultValues?.capa_required || false,
+      tags: actualDefaultValues?.tags || [],
+      ai_notes: actualDefaultValues?.ai_notes || '',
     },
   });
 
@@ -264,7 +270,7 @@ const NCForm: React.FC<NCFormProps> = ({
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Creating..." : "Create Non-Conformance"}
+            {isLoading ? "Creating..." : isEditing ? "Update Non-Conformance" : "Create Non-Conformance"}
           </Button>
         </DialogFooter>
       </form>

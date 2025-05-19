@@ -4,8 +4,10 @@ export type ProductStatus =
   | "Pending Approval" 
   | "Approved" 
   | "Released" 
-  | "Obsolete" 
-  | "all"; // Include 'all' for filter purposes
+  | "Obsolete";
+
+export const productStatusOptions = ["all", "In Development", "Pending Approval", "Approved", "Released", "Obsolete"] as const;
+export type ProductStatusFilter = typeof productStatusOptions[number];
 
 export interface Product {
   id: string;
@@ -22,7 +24,7 @@ export interface Product {
 }
 
 export interface ProductFilters {
-  status: ProductStatus | 'all';
+  status: ProductStatusFilter;
   search: string;
   manufacturer?: string;
   dateFrom?: Date;

@@ -7,7 +7,7 @@ import { ClipboardCheck } from 'lucide-react';
 import NCForm from '@/components/non-conformance/NCForm';
 import { Card, CardContent } from '@/components/ui/card';
 import { NonConformance } from '@/types/nonConformance';
-import { getNonConformanceById } from '@/services/nonConformanceService';
+import { getNonConformanceById, updateNonConformance } from '@/services/nonConformanceService';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ const NCEditPage: React.FC = () => {
   const [nonConformance, setNonConformance] = useState<NonConformance | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchNonConformance = async () => {
@@ -53,6 +54,42 @@ const NCEditPage: React.FC = () => {
     fetchNonConformance();
   }, [id]);
 
+  const handleSubmit = async (values: any) => {
+    if (!id) return;
+    
+    try {
+      setIsSubmitting(true);
+      const updatedNC = await updateNonConformance(id, values);
+      
+      if (updatedNC) {
+        toast({
+          title: "Success",
+          description: "Non-conformance updated successfully"
+        });
+        navigate(`/nonconformance/${id}`);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update non-conformance",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error updating non-conformance:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while updating the non-conformance",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate(`/nonconformance/${id}`);
+  };
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -87,7 +124,13 @@ const NCEditPage: React.FC = () => {
       ) : nonConformance ? (
         <Card>
           <CardContent className="p-6">
-            <NCForm initialData={nonConformance} isEditing={true} />
+            <NCForm 
+              initialData={nonConformance} 
+              onSubmit={handleSubmit} 
+              onCancel={handleCancel} 
+              isLoading={isSubmitting}
+              isEditing={true}
+            />
           </CardContent>
         </Card>
       ) : null}

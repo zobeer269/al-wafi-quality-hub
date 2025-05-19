@@ -140,6 +140,8 @@ export const seedNonConformances = async (nonConformances: Partial<NonConformanc
       reported_by: nc.reported_by || 'system',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      severity: nc.severity || 'Minor',
+      status: nc.status || 'Open',
     }));
     
     // Insert all NCs in a batch
@@ -211,5 +213,47 @@ export const getNCStatistics = async () => {
       critical: 0,
       capaRequired: 0
     };
+  }
+};
+
+export const getNonConformanceSummary = async (): Promise<NonConformanceSummary[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('non_conformance_summary')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching non-conformance summary:', error);
+      return [];
+    }
+    
+    return data as NonConformanceSummary[];
+  } catch (error) {
+    console.error('Error in getNonConformanceSummary:', error);
+    return [];
+  }
+};
+
+export const getNCSources = async (): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('non_conformances')
+      .select('source')
+      .not('source', 'is', null);
+    
+    if (error) {
+      console.error('Error fetching non-conformance sources:', error);
+      return [];
+    }
+    
+    // Extract unique sources
+    const sources = data
+      .map(item => item.source as string)
+      .filter((value, index, self) => value && self.indexOf(value) === index);
+    
+    return sources;
+  } catch (error) {
+    console.error('Error in getNCSources:', error);
+    return [];
   }
 };

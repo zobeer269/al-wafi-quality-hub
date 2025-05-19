@@ -2,7 +2,7 @@
 export type DocumentStatus = "Draft" | "In Review" | "Approved" | "Obsolete";
 export type CAPAStatus = "Open" | "Investigation" | "In Progress" | "Closed";
 export type CAPAType = "Corrective" | "Preventive" | "Both";
-export type CAPAPriority = 1 | 2 | 3;
+export type CAPAPriority = 1 | 2 | 3 | number; // Allow both specific values and general number
 export type ApprovalStatus = "Pending" | "Approved" | "Rejected";
 
 export const priorityLabelMap: Record<CAPAPriority, string> = {
@@ -35,7 +35,7 @@ export interface CAPA {
   title: string;
   description: string;
   type: CAPAType; // matches capa_type in database
-  priority: CAPAPriority | number; // Allow both number and CAPAPriority type
+  priority: CAPAPriority; // Allow both number and CAPAPriority type
   status: CAPAStatus;
   createdDate: string; // matches created_at in database
   dueDate?: string | null; // matches due_date in database
@@ -53,6 +53,7 @@ export interface CAPA {
   approved_at?: string | null;
   tags?: string[];
   ai_notes?: string | null;
+  updated_at?: string;
 }
 
 export interface Signature {

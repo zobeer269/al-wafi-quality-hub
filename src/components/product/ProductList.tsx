@@ -8,12 +8,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Check, FilterIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Product, ProductStatus } from '@/types/product';
+import { Product, ProductStatus, ProductStatusFilter } from '@/types/product';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateRange } from 'react-day-picker';
 
 export interface ProductFilters {
-  status: ProductStatus | 'all';
+  status: ProductStatusFilter;
   search: string;
   manufacturer?: string;
   dateFrom?: Date;
@@ -28,11 +29,14 @@ interface ProductListProps {
 
 const ProductList: React.FC<ProductListProps> = ({ products, onSelectProduct, onFilterChange }) => {
   const [filters, setFilters] = useState<ProductFilters>({
-    status: 'all' as ProductStatus | 'all',
+    status: 'all',
     search: '',
     manufacturer: '',
   });
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({ 
+    from: undefined,
+    to: undefined
+  });
 
   const handleFilterChange = (field: keyof ProductFilters, value: any) => {
     const newFilters = { ...filters, [field]: value };
@@ -43,14 +47,14 @@ const ProductList: React.FC<ProductListProps> = ({ products, onSelectProduct, on
     }
   };
 
-  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
     
     if (onFilterChange) {
       onFilterChange({
         ...filters,
-        dateFrom: range.from,
-        dateTo: range.to,
+        dateFrom: range?.from,
+        dateTo: range?.to,
       });
     }
   };
@@ -113,7 +117,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onSelectProduct, on
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from ? (
+                {dateRange?.from ? (
                   dateRange.to ? (
                     <>
                       {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
@@ -130,18 +134,19 @@ const ProductList: React.FC<ProductListProps> = ({ products, onSelectProduct, on
               <Calendar
                 initialFocus
                 mode="range"
+                defaultMonth={dateRange?.from}
                 selected={dateRange}
-                onSelect={(range) => handleDateRangeChange(range || {})}
+                onSelect={(range) => handleDateRangeChange(range)}
                 numberOfMonths={2}
               />
             </PopoverContent>
           </Popover>
           
           <Button variant="outline" size="icon" onClick={() => {
-            setFilters({ status: 'all' as ProductStatus | 'all', search: '', manufacturer: '' });
-            setDateRange({});
+            setFilters({ status: 'all', search: '', manufacturer: '' });
+            setDateRange(undefined);
             if (onFilterChange) {
-              onFilterChange({ status: 'all' as ProductStatus | 'all', search: '', manufacturer: '' });
+              onFilterChange({ status: 'all', search: '', manufacturer: '' });
             }
           }}>
             <FilterIcon className="h-4 w-4" />

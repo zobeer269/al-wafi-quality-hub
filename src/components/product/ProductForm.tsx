@@ -4,62 +4,73 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DialogFooter } from '@/components/ui/dialog';
-import { ProductStatus } from '@/types/product';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Product, ProductStatus } from '@/types/product';
 
-// Define form schema
+// Define the form schema using zod
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  name: z.string().min(3, { message: "Product name must be at least 3 characters" }),
+  sku: z.string().min(2, { message: "SKU is required" }),
   description: z.string().optional(),
-  sku: z.string().min(1, { message: "SKU is required" }),
   category: z.string().optional(),
   manufacturer: z.string().optional(),
   registration_number: z.string().optional(),
-  status: z.enum(["In Development", "Pending Approval", "Approved", "Released", "Obsolete"]),
+  status: z.enum(['In Development', 'Pending Approval', 'Approved', 'Released', 'Obsolete'] as const),
 });
 
-export type ProductFormData = z.infer<typeof formSchema>;
+type ProductFormValues = z.infer<typeof formSchema>;
 
-export interface ProductFormProps {
-  onSubmit: (values: ProductFormData) => void;
+interface ProductFormProps {
+  onSubmit: (values: ProductFormValues) => void;
   onCancel: () => void;
-  defaultValues?: Partial<ProductFormData>;
+  initialData?: Partial<Product>;
   isLoading?: boolean;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({
   onSubmit,
   onCancel,
-  defaultValues,
+  initialData,
   isLoading = false,
 }) => {
-  // Initialize the form with default values
-  const form = useForm<ProductFormData>({
+  const form = useForm<ProductFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: defaultValues?.name || '',
-      description: defaultValues?.description || '',
-      sku: defaultValues?.sku || '',
-      category: defaultValues?.category || '',
-      manufacturer: defaultValues?.manufacturer || '',
-      registration_number: defaultValues?.registration_number || '',
-      status: (defaultValues?.status as ProductStatus) || "In Development",
+      name: initialData?.name || '',
+      sku: initialData?.sku || '',
+      description: initialData?.description || '',
+      category: initialData?.category || '',
+      manufacturer: initialData?.manufacturer || '',
+      registration_number: initialData?.registration_number || '',
+      status: (initialData?.status as ProductStatus) || 'In Development',
     },
   });
 
-  // Handle form submission
-  const handleSubmit = (values: ProductFormData) => {
+  const handleSubmit = (values: ProductFormValues) => {
     onSubmit(values);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormField
             control={form.control}
             name="name"
@@ -67,13 +78,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <FormItem>
                 <FormLabel>Product Name</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Enter product name" />
+                  <Input placeholder="Enter product name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="sku"
@@ -81,11 +91,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <FormItem>
                 <FormLabel>SKU</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="SKU-12345" />
+                  <Input placeholder="Enter SKU code" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Unique product identifier
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -99,10 +106,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  {...field} 
-                  placeholder="Describe the product" 
-                  className="min-h-[120px]" 
+                <Textarea
+                  placeholder="Enter product description"
+                  className="min-h-[100px]"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -110,7 +117,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <FormField
             control={form.control}
             name="category"
@@ -118,13 +125,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <FormItem>
                 <FormLabel>Category</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Medical, Electronic, etc." />
+                  <Input placeholder="Product category" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="manufacturer"
@@ -132,13 +138,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <FormItem>
                 <FormLabel>Manufacturer</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Manufacturer name" />
+                  <Input placeholder="Manufacturer name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="registration_number"
@@ -146,7 +151,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <FormItem>
                 <FormLabel>Registration Number</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Registration or certification ID" />
+                  <Input placeholder="Registration/Certification number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -174,19 +179,22 @@ const ProductForm: React.FC<ProductFormProps> = ({
                   <SelectItem value="Obsolete">Obsolete</SelectItem>
                 </SelectContent>
               </Select>
+              <FormDescription>
+                Current lifecycle status of the product
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Product"}
+            {isLoading ? "Saving..." : initialData?.id ? "Update Product" : "Create Product"}
           </Button>
-        </DialogFooter>
+        </div>
       </form>
     </Form>
   );

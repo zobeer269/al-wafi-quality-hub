@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -9,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Complaint } from '@/types/complaint';
+import { CAPA } from '@/types/document';
 import { createCAPAFromNC } from '@/services/integrationService';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -28,6 +30,7 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
 }) => {
   const navigate = useNavigate();
   const [creatingCapa, setCreatingCapa] = useState(false);
+  const [capa, setCapa] = useState<CAPA | null>(null);
 
   const handleCreateCAPA = async () => {
     try {
@@ -42,6 +45,8 @@ const ComplaintDetail: React.FC<ComplaintDetailProps> = ({
       
       // Update linked CAPA
       if (capaData && onUpdate) {
+        setCapa(capaData as CAPA);
+        
         const updatedComplaint = {
           ...complaint,
           linked_capa_id: capaData.id,
