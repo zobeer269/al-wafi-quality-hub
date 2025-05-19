@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import PageHeader from "@/components/ui/PageHeader";
 import ComplaintDetail from "@/components/complaint/ComplaintDetail";
-import { getComplaintById } from "@/services/complaintService";
+import { fetchComplaintById } from "@/services/complaintService";
 import { Complaint } from "@/types/complaint";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,7 @@ const ComplaintDetailPage = () => {
 
       try {
         setLoading(true);
-        const data = await getComplaintById(id);
+        const data = await fetchComplaintById(id);
         if (data) {
           setComplaint(data);
         } else {
