@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { CAPAPriority, CAPAType, CAPAStatus, ApprovalStatus } from '@/types/document';
+import { CAPAPriority, CAPAType, CAPAStatus, ApprovalStatus, CAPA } from '@/types/document';
 
 export interface AuditFinding {
   id: string;
@@ -12,7 +13,7 @@ export interface AuditFinding {
 }
 
 // This interface matches database schema exactly
-export interface CAPA {
+interface DBCapa {
   id: string;
   number: string;
   title: string;
@@ -64,7 +65,7 @@ export async function getOpenAuditFindings(): Promise<AuditFinding[]> {
 /**
  * Convert database CAPA to frontend CAPA type
  */
-function mapDatabaseCAPAToFrontend(capa: CAPA): import('@/types/document').CAPA {
+function mapDatabaseCAPAToFrontend(capa: DBCapa): CAPA {
   return {
     id: capa.id,
     number: capa.number || `CAPA ${capa.id.substring(0, 6)}`, // Fallback title
@@ -95,7 +96,7 @@ function mapDatabaseCAPAToFrontend(capa: CAPA): import('@/types/document').CAPA 
 /**
  * Get all open CAPAs
  */
-export async function getOpenCAPAs(): Promise<import('@/types/document').CAPA[]> {
+export async function getOpenCAPAs(): Promise<CAPA[]> {
   try {
     const { data, error } = await supabase
       .from('capas')
@@ -107,7 +108,7 @@ export async function getOpenCAPAs(): Promise<import('@/types/document').CAPA[]>
       return [];
     }
 
-    return data.map(capa => mapDatabaseCAPAToFrontend(capa));
+    return data.map(capa => mapDatabaseCAPAToFrontend(capa as DBCapa));
   } catch (error) {
     console.error('Exception fetching open CAPAs:', error);
     return [];
@@ -117,7 +118,7 @@ export async function getOpenCAPAs(): Promise<import('@/types/document').CAPA[]>
 /**
  * Get a specific CAPA by ID
  */
-export async function getCAPAById(id: string): Promise<import('@/types/document').CAPA | null> {
+export async function getCAPAById(id: string): Promise<CAPA | null> {
   try {
     const { data, error } = await supabase
       .from('capas')
@@ -130,7 +131,7 @@ export async function getCAPAById(id: string): Promise<import('@/types/document'
       return null;
     }
 
-    return mapDatabaseCAPAToFrontend(data);
+    return mapDatabaseCAPAToFrontend(data as DBCapa);
   } catch (error) {
     console.error('Exception fetching CAPA by ID:', error);
     return null;
@@ -182,7 +183,7 @@ export async function createCAPAFromNC(data: {
   severity: string;
   nc_id: string;
   reported_by: string;
-}): Promise<import('@/types/document').CAPA> {
+}): Promise<CAPA> {
   try {
     // Map severity to priority
     const priority = mapSeverityToPriority(data.severity);
@@ -228,7 +229,7 @@ export async function createCAPAFromNC(data: {
       }
     }
 
-    return mapDatabaseCAPAToFrontend(capaData);
+    return mapDatabaseCAPAToFrontend(capaData as DBCapa);
   } catch (error) {
     console.error('Exception creating CAPA:', error);
     throw error;

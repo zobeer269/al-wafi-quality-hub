@@ -34,12 +34,12 @@ export interface CAPA {
   number: string;
   title: string;
   description: string;
-  type: CAPAType;  // matches capa_type in database
-  priority: CAPAPriority;
+  type: CAPAType; // matches capa_type in database
+  priority: CAPAPriority | number; // Allow both number and CAPAPriority type
   status: CAPAStatus;
-  createdDate: string;  // matches created_at in database
-  dueDate?: string | null;     // matches due_date in database
-  assignedTo?: string | null;  // matches assigned_to in database
+  createdDate: string; // matches created_at in database
+  dueDate?: string | null; // matches due_date in database
+  assignedTo?: string | null; // matches assigned_to in database
   root_cause?: string | null;
   action_plan?: string | null;
   created_by: string;
@@ -47,7 +47,7 @@ export interface CAPA {
   effectiveness_check_required?: boolean;
   effectiveness_verified?: boolean;
   linked_nc_id?: string | null;
-  linkedAuditFindingId?: string | null;  // matches linked_audit_finding_id in database
+  linkedAuditFindingId?: string | null; // matches linked_audit_finding_id in database
   approval_status?: ApprovalStatus;
   approved_by?: string | null;
   approved_at?: string | null;

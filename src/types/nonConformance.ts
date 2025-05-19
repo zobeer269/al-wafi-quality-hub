@@ -1,13 +1,13 @@
 
-export type NonConformanceSeverity = 'Minor' | 'Major' | 'Critical';
-
 export type NonConformanceStatus = 
-  | 'Open' 
-  | 'Investigation'
-  | 'Containment'
-  | 'Correction'
-  | 'Verification'
-  | 'Closed';
+  | "Open" 
+  | "Investigation" 
+  | "Containment" 
+  | "Correction" 
+  | "Verification" 
+  | "Closed";
+
+export type NonConformanceSeverity = "Minor" | "Major" | "Critical";
 
 export interface NonConformance {
   id: string;
@@ -15,50 +15,25 @@ export interface NonConformance {
   title: string;
   description: string;
   source?: string;
-  status: NonConformanceStatus;
   severity: NonConformanceSeverity;
-  linked_batch?: string;
-  linked_supplier_id?: string;
-  linked_capa_id?: string;
-  linked_audit_finding_id?: string;
-  root_cause?: string;
-  immediate_action?: string;
-  final_action?: string;
+  status: NonConformanceStatus;
   reported_by: string;
-  assigned_to?: string;
-  due_date?: string;
+  reported_date: string;
+  assigned_to?: string | null;
+  category: string;
+  root_cause?: string | null;
+  correction?: string | null;
+  containment_action?: string | null;
+  due_date?: string | null;
+  closed_date?: string | null;
+  closed_by?: string | null;
+  capa_required?: boolean;
+  linked_capa_id?: string | null;
+  linked_audit_finding_id?: string | null;
+  lot_number?: string | null;
+  product_affected?: string | null;
   created_at: string;
   updated_at: string;
-  closed_at?: string;
-  capa_required?: boolean;
-  tags?: string[]; // For AI tags
-  ai_notes?: string; // For AI-generated notes
-}
-
-export interface NonConformanceAttachment {
-  id: string;
-  nc_id: string;
-  file_name: string;
-  file_url: string;
-  file_type: string;
-  uploaded_by: string;
-  uploaded_at: string;
-  description?: string;
-}
-
-export interface NonConformanceFilters {
-  status?: NonConformanceStatus | 'all';
-  severity?: NonConformanceSeverity | 'all';
-  source?: string | 'all';
-  assignedTo?: string | 'all';
-  dateFrom?: string;
-  dateTo?: string;
-  tags?: string[]; // For filtering by AI tags
-}
-
-export interface NonConformanceSummary {
-  status: NonConformanceStatus;
-  count: number;
-  critical_count: number;
-  capa_required_count: number;
+  tags?: string[] | null;
+  ai_notes?: string | null;
 }

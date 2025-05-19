@@ -1,421 +1,251 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CalendarCheck, Clock, Edit, FileText, UploadCloud, User, Clipboard, AlertCircle, LinkIcon } from 'lucide-react';
-import { 
-  NonConformance, 
-  NonConformanceAttachment 
-} from '@/types/nonConformance';
-import { getAttachments, uploadAttachment } from '@/services/nonConformanceService';
-import { getCAPAById, getAuditFindingById, CAPA, AuditFinding } from '@/services/integrationService';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
 
-interface NCDetailProps {
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { NonConformance } from '@/types/nonConformance';
+import { Badge } from '@/components/ui/badge';
+import { CAPA } from '@/types/document';
+import { createCAPAFromNC } from '@/services/integrationService';
+import { updateNonConformance } from '@/services/nonConformanceService';
+import { toast } from '@/hooks/use-toast';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+
+interface NonConformanceDetailProps {
   nonConformance: NonConformance;
-  onClose?: () => void;
-  onUpdate?: (updatedNC: NonConformance) => void;
 }
 
-const NCDetail: React.FC<NCDetailProps> = ({ nonConformance, onClose, onUpdate }) => {
-  const navigate = useNavigate();
-  const [attachments, setAttachments] = useState<NonConformanceAttachment[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileDescription, setFileDescription] = useState('');
-  const [linkedCAPA, setLinkedCAPA] = useState<CAPA | null>(null);
-  const [linkedFinding, setLinkedFinding] = useState<AuditFinding | null>(null);
-  const [creatingCapa, setCreatingCapa] = useState(false);
-  
+const NCDetail: React.FC<NonConformanceDetailProps> = ({ nonConformance }) => {
+  // Local state for the NC
+  const [nc, setNC] = useState<NonConformance>(nonConformance);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [linkedCapa, setLinkedCapa] = useState<CAPA | null>(null);
+
   useEffect(() => {
-    const loadData = async () => {
-      // Load attachments
-      const attachmentData = await getAttachments(nonConformance.id);
-      setAttachments(attachmentData);
-      
-      // Load linked CAPA if exists
-      if (nonConformance.linked_capa_id) {
-        const capaData = await getCAPAById(nonConformance.linked_capa_id);
-        setLinkedCAPA(capaData);
-      }
-      
-      // Load linked Audit Finding if exists
-      if (nonConformance.linked_audit_finding_id) {
-        const findingData = await getAuditFindingById(nonConformance.linked_audit_finding_id);
-        setLinkedFinding(findingData);
-      }
-    };
+    setNC(nonConformance);
     
-    loadData();
-  }, [nonConformance.id, nonConformance.linked_capa_id, nonConformance.linked_audit_finding_id]);
-  
-  const handleEditNC = () => {
-    navigate(`/nonconformance/edit/${nonConformance.id}`);
-  };
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    // If there's a linked CAPA, fetch its details
+    if (nonConformance.linked_capa_id) {
+      // Logic to fetch linked CAPA here if needed
     }
-  };
-  
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "Error",
-        description: "Please select a file to upload",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+  }, [nonConformance]);
+
+  // Function to update a specific field in the NC
+  const updateNCField = async (field: keyof NonConformance, value: any) => {
     try {
-      setIsUploading(true);
-      
-      const result = await uploadAttachment(
-        nonConformance.id,
-        selectedFile,
-        // For now, we're using a mock user ID
-        "00000000-0000-0000-0000-000000000000",
-        fileDescription
-      );
-      
-      if (result) {
-        setAttachments([result, ...attachments]);
-        setSelectedFile(null);
-        setFileDescription('');
-        setUploadDialogOpen(false);
+      setLoading(true);
+      const updatedNC = await updateNonConformance(nc.id, { [field]: value });
+      if (updatedNC) {
+        setNC({
+          ...nc,
+          [field]: value,
+          updated_at: new Date().toISOString()
+        });
+        toast({
+          title: "Updated",
+          description: `Non-conformance ${field} updated successfully`,
+        });
       }
     } catch (error) {
-      console.error('Error uploading attachment:', error);
+      console.error(`Error updating ${field}:`, error);
+      setErrorMessage(`Failed to update ${field}`);
     } finally {
-      setIsUploading(false);
+      setLoading(false);
     }
   };
-  
+
+  // Function to handle creating a CAPA from this NC
   const handleCreateCAPA = async () => {
     try {
-      setCreatingCapa(true);
+      setLoading(true);
       
-      // Create CAPA from NC
-      const capaData = await createCAPAFromNC({
-        title: nonConformance.title,
-        description: nonConformance.description,
-        severity: nonConformance.severity,
-        nc_id: nonConformance.id,
-        reported_by: nonConformance.reported_by,
-      });
+      if (!nc.reported_by) {
+        setErrorMessage("Missing reported by information");
+        return;
+      }
       
-      if (capaData && onUpdate) {
-        // Map the returned CAPA to our frontend CAPA type if needed
-        setCapa(capaData);
+      const capaData = {
+        title: nc.title,
+        description: nc.description,
+        severity: nc.severity,
+        nc_id: nc.id,
+        reported_by: nc.reported_by
+      };
+      
+      const newCapa = await createCAPAFromNC(capaData);
+      
+      if (newCapa) {
+        toast({
+          title: "Success",
+          description: "CAPA created successfully",
+        });
         
-        // Update the NC with the linked CAPA
-        const updatedNC = {
-          ...nonConformance,
-          linked_capa_id: capaData.id,
-          capa_required: true
-        };
+        // Update the NC with the linked CAPA ID
+        updateNCField('linked_capa_id', newCapa.id);
+        updateNCField('capa_required', true);
         
-        await updateNCField(nonConformance.id, 'linked_capa_id', capaData.id);
-        await updateNCField(nonConformance.id, 'capa_required', true);
-        
-        onUpdate(updatedNC);
+        setLinkedCapa(newCapa);
       }
     } catch (error) {
-      console.error('Error creating CAPA:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create CAPA",
-        variant: "destructive",
-      });
+      console.error("Error creating CAPA:", error);
+      setErrorMessage("Failed to create CAPA");
     } finally {
-      setCreatingCapa(false);
+      setLoading(false);
     }
   };
-  
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
+
+  // Render based on severity
+  const getSeverityBadge = () => {
+    switch (nc.severity) {
       case 'Critical':
-        return <Badge className="bg-red-500">{severity}</Badge>;
+        return <Badge variant="destructive">Critical</Badge>;
       case 'Major':
-        return <Badge className="bg-amber-500">{severity}</Badge>;
+        return <Badge variant="default">Major</Badge>;
       case 'Minor':
-        return <Badge className="bg-blue-500">{severity}</Badge>;
+        return <Badge variant="outline">Minor</Badge>;
       default:
-        return <Badge>{severity}</Badge>;
+        return <Badge>Unknown</Badge>;
     }
   };
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+
+  // Get status badge
+  const getStatusBadge = () => {
+    switch (nc.status) {
       case 'Open':
-        return <Badge variant="outline" className="border-blue-500 text-blue-500">{status}</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Open</Badge>;
       case 'Investigation':
-        return <Badge variant="outline" className="border-amber-500 text-amber-500">{status}</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Investigation</Badge>;
       case 'Containment':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-500">{status}</Badge>;  
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Containment</Badge>;
       case 'Correction':
-        return <Badge variant="outline" className="border-purple-500 text-purple-500">{status}</Badge>;
+        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Correction</Badge>;
       case 'Verification':
-        return <Badge variant="outline" className="border-green-500 text-green-500">{status}</Badge>;
+        return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Verification</Badge>;
       case 'Closed':
-        return <Badge variant="outline" className="border-gray-500 text-gray-500">{status}</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Closed</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">Unknown</Badge>;
     }
   };
-  
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
-  
+
   return (
-    <>
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-lg font-semibold">{nonConformance.nc_number}</h2>
-              {getStatusBadge(nonConformance.status)}
-              {getSeverityBadge(nonConformance.severity)}
-            </div>
-            <CardTitle>{nonConformance.title}</CardTitle>
-            <CardDescription>
-              <div className="flex items-center gap-2 mt-2">
-                <CalendarCheck className="h-4 w-4" />
-                <span>Reported on: {formatDate(nonConformance.created_at)}</span>
-              </div>
-            </CardDescription>
-          </div>
-          <Button onClick={handleEditNC}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h3 className="font-medium mb-2">Description</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-line">{nonConformance.description}</p>
-          </div>
-          
+    <div className="space-y-6">
+      {errorMessage && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+      
+      <Card>
+        <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-medium mb-2">Details</h3>
-              <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Source:</dt>
-                  <dd>{nonConformance.source || 'Not specified'}</dd>
+              <h3 className="text-lg font-medium">Basic Information</h3>
+              <div className="grid grid-cols-1 gap-3 mt-3">
+                <div>
+                  <span className="text-sm font-medium text-gray-500">NC Number</span>
+                  <p className="text-base">{nc.nc_number}</p>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Batch Number:</dt>
-                  <dd>{nonConformance.linked_batch || 'N/A'}</dd>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Title</span>
+                  <p className="text-base">{nc.title}</p>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Due Date:</dt>
-                  <dd className="flex items-center">
-                    {nonConformance.due_date && (
-                      <>
-                        <Clock className="mr-1 h-3 w-3" /> 
-                        {formatDate(nonConformance.due_date)}
-                      </>
-                    ) || 'No deadline specified'}
-                  </dd>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Description</span>
+                  <p className="text-base">{nc.description}</p>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Assigned To:</dt>
-                  <dd className="flex items-center">
-                    <User className="mr-1 h-3 w-3" /> 
-                    {nonConformance.assigned_to || 'Unassigned'}
-                  </dd>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Source</span>
+                  <p className="text-base">{nc.source || 'Not specified'}</p>
                 </div>
-                
-                {/* Linked CAPA Display */}
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Linked CAPA:</dt>
-                  <dd>
-                    {linkedCAPA ? (
-                      <div className="flex items-center">
-                        <LinkIcon className="mr-1 h-3 w-3" />
-                        <a 
-                          href={`/capa/${linkedCAPA.id}`} 
-                          className="text-primary hover:underline"
-                        >
-                          {linkedCAPA.number} ({linkedCAPA.status})
-                        </a>
-                      </div>
-                    ) : nonConformance.capa_required ? (
-                      <span className="text-amber-500">Required but not linked</span>
-                    ) : 'None'}
-                  </dd>
+                <div className="flex gap-2">
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Severity</span>
+                    <div>{getSeverityBadge()}</div>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">Status</span>
+                    <div>{getStatusBadge()}</div>
+                  </div>
                 </div>
-                
-                {/* Linked Audit Finding Display */}
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Linked Audit Finding:</dt>
-                  <dd>
-                    {linkedFinding ? (
-                      <div className="flex items-center">
-                        <Clipboard className="mr-1 h-3 w-3" />
-                        <a 
-                          href={`/audit/finding/${linkedFinding.id}`} 
-                          className="text-primary hover:underline"
-                        >
-                          {linkedFinding.finding_number}
-                        </a>
-                      </div>
-                    ) : 'None'}
-                  </dd>
-                </div>
-              </dl>
+              </div>
             </div>
             
             <div>
-              <h3 className="font-medium mb-2">Resolution Progress</h3>
-              <div className="space-y-3 text-sm">
+              <h3 className="text-lg font-medium">Additional Details</h3>
+              <div className="grid grid-cols-1 gap-3 mt-3">
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-muted-foreground">Root Cause:</span>
-                    <span className={`text-xs ${nonConformance.root_cause ? 'text-green-500' : 'text-amber-500'}`}>
-                      {nonConformance.root_cause ? 'Identified' : 'Pending'}
-                    </span>
-                  </div>
-                  <p className="text-sm">{nonConformance.root_cause || 'Not yet identified'}</p>
+                  <span className="text-sm font-medium text-gray-500">Reported Date</span>
+                  <p className="text-base">{new Date(nc.reported_date).toLocaleDateString()}</p>
                 </div>
-                
-                <Separator />
-                
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-muted-foreground">Immediate/Containment Action:</span>
-                    <span className={`text-xs ${nonConformance.immediate_action ? 'text-green-500' : 'text-amber-500'}`}>
-                      {nonConformance.immediate_action ? 'Implemented' : 'Pending'}
-                    </span>
-                  </div>
-                  <p className="text-sm">{nonConformance.immediate_action || 'No immediate actions recorded'}</p>
+                  <span className="text-sm font-medium text-gray-500">Reported By</span>
+                  <p className="text-base">{nc.reported_by || 'Unknown'}</p>
                 </div>
-                
-                <Separator />
-                
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-muted-foreground">Final Corrective Action:</span>
-                    <span className={`text-xs ${nonConformance.final_action ? 'text-green-500' : 'text-amber-500'}`}>
-                      {nonConformance.final_action ? 'Implemented' : 'Pending'}
-                    </span>
-                  </div>
-                  <p className="text-sm">{nonConformance.final_action || 'No final corrective actions recorded'}</p>
+                  <span className="text-sm font-medium text-gray-500">Assigned To</span>
+                  <p className="text-base">{nc.assigned_to || 'Not assigned'}</p>
                 </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium">Attachments</h3>
-              <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <UploadCloud className="h-4 w-4 mr-2" />
-                    Upload
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Upload Attachment</DialogTitle>
-                    <DialogDescription>
-                      Attach files related to this non-conformance
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="grid gap-4 py-4">
-                    <div>
-                      <Label htmlFor="file">File</Label>
-                      <Input 
-                        id="file" 
-                        type="file" 
-                        onChange={handleFileChange} 
-                        className="mt-2" 
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Description (optional)</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Enter a description for this file..."
-                        value={fileDescription}
-                        onChange={(e) => setFileDescription(e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setUploadDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleUpload} 
-                      disabled={!selectedFile || isUploading}
-                    >
-                      {isUploading ? 'Uploading...' : 'Upload'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-            
-            {attachments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No attachments found</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {attachments.map((attachment) => (
-                  <div key={attachment.id} className="border rounded-md p-3 flex items-center">
-                    <FileText className="h-8 w-8 mr-3 text-muted-foreground" />
-                    <div className="min-w-0 flex-1">
-                      <a 
-                        href={attachment.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium hover:underline truncate block"
+                <div>
+                  <span className="text-sm font-medium text-gray-500">CAPA Required</span>
+                  <p className="text-base">{nc.capa_required ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">Linked CAPA</span>
+                  <p className="text-base">
+                    {nc.linked_capa_id ? nc.linked_capa_id : 'None'}
+                    {!nc.linked_capa_id && nc.severity === 'Critical' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="ml-2" 
+                        onClick={handleCreateCAPA}
+                        disabled={loading}
                       >
-                        {attachment.file_name}
-                      </a>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {attachment.description || 'No description'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                        Create CAPA
+                      </Button>
+                    )}
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between text-sm text-muted-foreground">
-          <div>Created: {formatDate(nonConformance.created_at)}</div>
-          <div>Last Updated: {formatDate(nonConformance.updated_at)}</div>
-        </CardFooter>
       </Card>
-    </>
+
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="text-lg font-medium mb-4">Investigation & Action</h3>
+          <div className="space-y-4">
+            <div>
+              <span className="text-sm font-medium text-gray-500">Root Cause</span>
+              <p className="text-base mt-1 bg-gray-50 p-3 rounded-md">
+                {nc.root_cause || 'No root cause analysis documented yet'}
+              </p>
+            </div>
+            
+            <div>
+              <span className="text-sm font-medium text-gray-500">Containment Action</span>
+              <p className="text-base mt-1 bg-gray-50 p-3 rounded-md">
+                {nc.containment_action || 'No containment action documented yet'}
+              </p>
+            </div>
+            
+            <div>
+              <span className="text-sm font-medium text-gray-500">Correction</span>
+              <p className="text-base mt-1 bg-gray-50 p-3 rounded-md">
+                {nc.correction || 'No correction documented yet'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional cards for attachments, timelines, etc. could be added here */}
+    </div>
   );
 };
 

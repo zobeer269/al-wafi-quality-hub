@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -51,7 +52,6 @@ interface LinkedCAPAProps {
 const LinkedCAPA: React.FC<LinkedCAPAProps> = ({ capas, linkedCAPAValue, onLinkedCAPAChange }) => {
   return (
     <FormField
-      control={{}}
       name="linked_capa_id"
       render={() => (
         <FormItem>

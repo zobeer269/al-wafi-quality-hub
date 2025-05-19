@@ -1,46 +1,45 @@
+
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DialogFooter } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DialogFooter } from '@/components/ui/dialog';
 import { ProductStatus } from '@/types/product';
 
-const productFormSchema = z.object({
-  name: z.string().min(2, {
-    message: 'Product name must be at least 2 characters.',
-  }),
+// Define form schema
+const formSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   description: z.string().optional(),
-  sku: z.string().min(3, {
-    message: 'SKU must be at least 3 characters.',
-  }),
+  sku: z.string().min(1, { message: "SKU is required" }),
   category: z.string().optional(),
   manufacturer: z.string().optional(),
   registration_number: z.string().optional(),
-  status: z.enum(['In Development', 'Pending Approval', 'Approved', 'Released', 'Obsolete']),
+  status: z.enum(["In Development", "Pending Approval", "Approved", "Released", "Obsolete"]),
 });
 
-type ProductFormValues = z.infer<typeof productFormSchema>;
+export type ProductFormData = z.infer<typeof formSchema>;
 
-interface ProductFormProps {
-  onSubmit: (values: ProductFormValues) => void;
+export interface ProductFormProps {
+  onSubmit: (values: ProductFormData) => void;
   onCancel: () => void;
-  defaultValues?: Partial<ProductFormValues>;
+  defaultValues?: Partial<ProductFormData>;
+  isLoading?: boolean;
 }
 
-// Fix the product status handling
-export default function ProductForm({ 
-  onSubmit, 
-  onCancel, 
-  defaultValues 
-}: ProductFormProps) {
-  const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productFormSchema),
+const ProductForm: React.FC<ProductFormProps> = ({
+  onSubmit,
+  onCancel,
+  defaultValues,
+  isLoading = false,
+}) => {
+  // Initialize the form with default values
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: defaultValues?.name || '',
       description: defaultValues?.description || '',
@@ -48,30 +47,51 @@ export default function ProductForm({
       category: defaultValues?.category || '',
       manufacturer: defaultValues?.manufacturer || '',
       registration_number: defaultValues?.registration_number || '',
-      // Update this to handle all valid product status values
-      status: (defaultValues?.status as ProductStatus) || 'In Development'
+      status: (defaultValues?.status as ProductStatus) || "In Development",
     },
   });
 
+  // Handle form submission
+  const handleSubmit = (values: ProductFormData) => {
+    onSubmit(values);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Product name" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is the display name that will be shown to users.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product Name</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Enter product name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="sku"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>SKU</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="SKU-12345" />
+                </FormControl>
+                <FormDescription>
+                  Unique product identifier
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
           name="description"
@@ -79,83 +99,61 @@ export default function ProductForm({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Product description"
-                  className="resize-none"
-                  {...field}
+                <Textarea 
+                  {...field} 
+                  placeholder="Describe the product" 
+                  className="min-h-[120px]" 
                 />
               </FormControl>
-              <FormDescription>
-                Write a few words about the product.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="sku"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>SKU</FormLabel>
-              <FormControl>
-                <Input placeholder="SKU" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is the unique identifier for the product.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <FormControl>
-                <Input placeholder="Category" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is the category for the product.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="manufacturer"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Manufacturer</FormLabel>
-              <FormControl>
-                <Input placeholder="Manufacturer" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is the manufacturer of the product.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="registration_number"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Registration Number</FormLabel>
-              <FormControl>
-                <Input placeholder="Registration Number" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is the registration number for the product.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Medical, Electronic, etc." />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="manufacturer"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Manufacturer</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Manufacturer name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="registration_number"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Registration Number</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Registration or certification ID" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
           name="status"
@@ -165,7 +163,7 @@ export default function ProductForm({
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a status" />
+                    <SelectValue placeholder="Select product status" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -176,20 +174,22 @@ export default function ProductForm({
                   <SelectItem value="Obsolete">Obsolete</SelectItem>
                 </SelectContent>
               </Select>
-              <FormDescription>
-                This is the status of the product.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save Product"}
+          </Button>
         </DialogFooter>
       </form>
     </Form>
   );
-}
+};
+
+export default ProductForm;
