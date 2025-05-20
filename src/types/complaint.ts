@@ -27,6 +27,7 @@ export interface Complaint {
   resolution_notes?: string;
   justification?: string;
   created_at: string;
+  product_name?: string;
 }
 
 

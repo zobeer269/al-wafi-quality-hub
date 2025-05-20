@@ -34,5 +34,21 @@ export interface NonConformance {
   capa_required: boolean;
   created_at: string;
   updated_at?: string;
+  nc_number?: string;
+  reported_by?: string;
+  reported_date?: string;
+  category?: string;
+  linked_batch?: string;
+  linked_supplier_id?: string;
+  linked_audit_finding_id?: string;
+  root_cause?: string;
+  immediate_action?: string;
+  final_action?: string;
+  correction?: string;
+  containment_action?: string;
+  due_date?: string;
+  tags?: string[];
+  ai_notes?: string;
+
 }
 

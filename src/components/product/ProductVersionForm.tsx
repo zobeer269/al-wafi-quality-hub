@@ -39,13 +39,14 @@ type ProductVersionFormValues = z.infer<typeof formSchema>;
 
 interface ProductVersionFormProps {
   productId: string;
+  onSuccess?: () => Promise<void>;
+  isEditing?: boolean;
   onSubmit: (values: Partial<ProductVersion>) => void;
   onCancel: () => void;
   isLoading?: boolean;
   initialData?: Partial<ProductVersion>;
   onClose?: () => void; // لحل خطأ props
   isEditing?: boolean;
-  onSuccess?: () => Promise<void>; // لحل خطأ onSuccess
 }
 
 
