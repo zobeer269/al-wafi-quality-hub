@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { NonConformance, NonConformanceStatus, NonConformanceSeverity } from '@/types/nonConformance';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +20,7 @@ export const createNonConformance = async (nonConformanceData: Partial<NonConfor
       reported_date: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      category: nonConformanceData.category || 'General',
       capa_required: nonConformanceData.severity === 'Critical' ? true : (nonConformanceData.capa_required || false),
     };
     
@@ -131,27 +133,33 @@ export const getNonConformances = async (filters?: Partial<{
 // Add bulk create function
 export const seedNonConformances = async (nonConformances: Partial<NonConformance>[]): Promise<boolean> => {
   try {
-    // Set default properties to ensure required fields are present
-    const preparedNCs = nonConformances.map(nc => ({
-      ...nc,
-      nc_number: nc.nc_number || generateNCNumber(),
-      category: nc.category || 'General',
-      description: nc.description || 'Default description',
-      reported_by: nc.reported_by || 'system',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      severity: nc.severity || 'Minor',
-      status: nc.status || 'Open',
-    }));
+    // Set default properties for each NC
+    const preparedNCs = nonConformances.map(nc => {
+      // Ensure NC has all required fields
+      if (!nc.category) nc.category = 'General';
+      if (!nc.description) nc.description = 'Default description';
+      if (!nc.reported_by) nc.reported_by = 'system';
+      if (!nc.severity) nc.severity = 'Minor';
+      if (!nc.status) nc.status = 'Open';
+      if (!nc.nc_number) nc.nc_number = generateNCNumber();
+      
+      return {
+        ...nc,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
     
-    // Insert all NCs in a batch
-    const { error } = await supabase
-      .from('non_conformances')
-      .insert(preparedNCs);
-    
-    if (error) {
-      console.error('Error seeding non-conformances:', error);
-      return false;
+    // Insert NCs one by one to avoid array insertion type issues
+    for (const nc of preparedNCs) {
+      const { error } = await supabase
+        .from('non_conformances')
+        .insert([nc]);
+      
+      if (error) {
+        console.error('Error seeding non-conformance:', error, nc);
+        return false;
+      }
     }
     
     return true;

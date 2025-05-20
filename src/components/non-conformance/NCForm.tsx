@@ -18,6 +18,7 @@ const formSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters" }),
   description: z.string().min(10, { message: "Description must be at least 10 characters" }),
   source: z.string().optional(),
+  category: z.string().min(1, { message: "Category is required" }),
   status: z.enum(["Open", "Investigation", "Containment", "Correction", "Verification", "Closed"] as const),
   severity: z.enum(["Minor", "Major", "Critical"] as const),
   linked_batch: z.string().optional(),
@@ -27,6 +28,8 @@ const formSchema = z.object({
   root_cause: z.string().optional(),
   immediate_action: z.string().optional(),
   final_action: z.string().optional(),
+  correction: z.string().optional(),
+  containment_action: z.string().optional(),
   assigned_to: z.string().optional(),
   due_date: z.string().optional(),
   capa_required: z.boolean().optional(),
@@ -108,6 +111,12 @@ const NCForm: React.FC<NCFormProps> = ({
     loadCAPAs();
   }, []);
 
+  useEffect(() => {
+    if (actualDefaultValues?.linked_capa_id) {
+      setLinkedCAPAValue(actualDefaultValues.linked_capa_id);
+    }
+  }, [actualDefaultValues]);
+
   const handleLinkedCAPAChange = (value: string) => {
     setLinkedCAPAValue(value);
 
@@ -130,6 +139,7 @@ const NCForm: React.FC<NCFormProps> = ({
       title: actualDefaultValues?.title || '',
       description: actualDefaultValues?.description || '',
       source: actualDefaultValues?.source || '',
+      category: actualDefaultValues?.category || 'General',
       status: (actualDefaultValues?.status as NonConformanceStatus) || "Open",
       severity: (actualDefaultValues?.severity as NonConformanceSeverity) || "Minor",
       linked_batch: actualDefaultValues?.linked_batch || '',
@@ -139,6 +149,8 @@ const NCForm: React.FC<NCFormProps> = ({
       root_cause: actualDefaultValues?.root_cause || '',
       immediate_action: actualDefaultValues?.immediate_action || '',
       final_action: actualDefaultValues?.final_action || '',
+      correction: actualDefaultValues?.correction || '',
+      containment_action: actualDefaultValues?.containment_action || '',
       assigned_to: actualDefaultValues?.assigned_to || '',
       due_date: actualDefaultValues?.due_date || '',
       capa_required: actualDefaultValues?.capa_required || false,

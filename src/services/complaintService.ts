@@ -1,113 +1,94 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Complaint, ComplaintFilters, ComplaintStatus } from "@/types/complaint";
-import { toast } from "@/components/ui/use-toast";
+import { Complaint } from "@/types/document";
+import { toast } from "@/hooks/use-toast";
 
-// Helper function to safely convert database response to Complaint type
-const toComplaint = (data: any): Complaint => {
-  if (!data) return null as unknown as Complaint;
-  
-  return {
-    id: data.id || '',
-    reference_number: data.reference_number || '',
-    title: data.title || '',
-    description: data.description || '',
-    source: data.source || '',
-    product_id: data.product_id || null,
-    product: data.products || null,
-    batch_number: data.batch_number || null,
-    severity: data.severity || 'Medium',
-    status: data.status || 'Open',
-    linked_nc_id: data.linked_nc_id || null,
-    linked_capa_id: data.linked_capa_id || null,
-    assigned_to: data.assigned_to || null,
-    reported_by: data.reported_by || '',
-    reported_at: data.reported_at || new Date().toISOString(),
-    closed_at: data.closed_at || null,
-    closed_by: data.closed_by || null,
-    resolution_notes: data.resolution_notes || null,
-    justification: data.justification || null,
-    created_at: data.created_at || new Date().toISOString(),
-    updated_at: data.updated_at || new Date().toISOString()
-  };
-};
-
-// Update the fetch complaints function to use our safe converter
-export const fetchComplaints = async (filters?: ComplaintFilters) => {
+// Mock data for development - replace with actual implementation
+export const fetchComplaints = async (filters: any = {}) => {
   try {
-    let query = supabase
-      .from('complaints')
-      .select('*, products:product_id (id, name, sku)');
+    let query = supabase.from('complaints').select('*, products(name)');
     
-    if (filters) {
-      // Apply filters if they are provided
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-      
-      if (filters.severity) {
-        query = query.eq('severity', filters.severity);
-      }
-      
-      if (filters.product_id) {
-        query = query.eq('product_id', filters.product_id);
-      }
-      
-      if (filters.date_from) {
-        query = query.gte('reported_at', filters.date_from);
-      }
-      
-      if (filters.date_to) {
-        query = query.lte('reported_at', filters.date_to);
-      }
-    }
+    // Apply filters
+    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.severity) query = query.eq('severity', filters.severity);
+    if (filters.product_id) query = query.eq('product_id', filters.product_id);
+    if (filters.date_from) query = query.gte('reported_at', filters.date_from);
+    if (filters.date_to) query = query.lte('reported_at', filters.date_to);
     
-    query = query.order('reported_at', { ascending: false });
-    
-    const { data, error } = await query;
+    const { data, error } = await query.order('reported_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching complaints:', error);
-      toast({
-        title: "Error",
-        description: `Failed to fetch complaints: ${error.message}`,
-        variant: "destructive",
-      });
       return [];
     }
     
-    return (data || []).map(item => toComplaint(item));
+    // Process data to match our Complaint interface
+    return data.map(item => ({
+      id: item.id,
+      reference_number: item.reference_number,
+      title: item.title,
+      description: item.description,
+      source: item.source,
+      severity: item.severity,
+      status: item.status,
+      product_id: item.product_id,
+      product_name: item.products?.name || 'Unknown product',
+      batch_number: item.batch_number,
+      linked_nc_id: item.linked_nc_id,
+      linked_capa_id: item.linked_capa_id,
+      assigned_to: item.assigned_to,
+      reported_by: item.reported_by,
+      reported_at: item.reported_at,
+      closed_at: item.closed_at,
+      closed_by: item.closed_by,
+      resolution_notes: item.resolution_notes,
+      justification: item.justification,
+      created_at: item.created_at,
+      updated_at: item.updated_at
+    }));
   } catch (error) {
-    console.error('Unexpected error fetching complaints:', error);
+    console.error('Error in fetchComplaints:', error);
     return [];
   }
 };
 
-// Fetch a single complaint by ID - update to use our safe converter
 export const fetchComplaintById = async (id: string) => {
   try {
     const { data, error } = await supabase
       .from('complaints')
-      .select(`
-        *,
-        products:product_id (id, name, sku)
-      `)
+      .select('*, products(name)')
       .eq('id', id)
       .single();
     
     if (error) {
       console.error('Error fetching complaint:', error);
-      toast({
-        title: "Error",
-        description: `Failed to fetch complaint details: ${error.message}`,
-        variant: "destructive",
-      });
       return null;
     }
     
-    return toComplaint(data);
+    return {
+      id: data.id,
+      reference_number: data.reference_number,
+      title: data.title,
+      description: data.description,
+      source: data.source,
+      severity: data.severity,
+      status: data.status,
+      product_id: data.product_id,
+      product_name: data.products?.name || 'Unknown product',
+      batch_number: data.batch_number,
+      linked_nc_id: data.linked_nc_id,
+      linked_capa_id: data.linked_capa_id,
+      assigned_to: data.assigned_to,
+      reported_by: data.reported_by,
+      reported_at: data.reported_at,
+      closed_at: data.closed_at,
+      closed_by: data.closed_by,
+      resolution_notes: data.resolution_notes,
+      justification: data.justification,
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    } as Complaint;
   } catch (error) {
-    console.error('Unexpected error fetching complaint:', error);
+    console.error('Error in fetchComplaintById:', error);
     return null;
   }
 };

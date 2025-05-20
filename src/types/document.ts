@@ -55,36 +55,31 @@ export interface CAPA {
   ai_notes?: string | null;
   updated_at?: string;
   capa_type?: CAPAType; // optional alias if needed for service compatibility
-  linkedAuditFindingId?: string | null; // Supabase: linked_audit_finding_id
-
 }
 
-export interface NonConformance {
+export interface Complaint {
   id: string;
-  nc_number: string;
+  reference_number: string;
   title: string;
   description: string;
   source: string;
   severity: "Low" | "Medium" | "High" | "Critical";
-  status: "Open" | "Investigation" | "Containment" | "Correction" | "Verification" | "Closed";
+  status: "Open" | "Under Investigation" | "Resolved" | "Closed";
   reported_by: string;
-  reported_date: string;
+  reported_at: string;
   assigned_to?: string | null;
-  capa_required: boolean;
-  category: string;
-  containment_action?: string | null;
-  correction?: string | null;
-  immediate_action?: string | null;
-  final_action?: string | null;
-  linked_batch?: string | null;
-  linked_supplier_id?: string | null;
+  batch_number?: string | null;
+  product_id?: string | null; 
+  product_name?: string; // Adding this field for display purposes
+  linked_nc_id?: string | null;
   linked_capa_id?: string | null;
-  tags?: string[];
-  ai_notes?: string | null;
+  justification?: string | null;
+  resolution_notes?: string | null;
+  closed_at?: string | null;
+  closed_by?: string | null;
   created_at: string;
   updated_at: string;
-  closed_date?: string | null;
-  closed_by?: string | null;
+  tags?: string[];
 }
 
 export interface Signature {

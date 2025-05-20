@@ -37,6 +37,10 @@ export interface NonConformance {
   root_cause?: string | null;
   correction?: string | null;
   containment_action?: string | null;
+  immediate_action?: string | null;
+  final_action?: string | null;
+  linked_batch?: string | null;
+  linked_supplier_id?: string | null;
   due_date?: string | null;
   closed_date?: string | null;
   closed_by?: string | null;

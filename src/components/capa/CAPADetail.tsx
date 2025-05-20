@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,10 +124,10 @@ const CAPADetail: React.FC<CAPADetailProps> = ({
         return;
       }
 
-      // Process approval with digital signature - fix the boolean conversion
+      // Process approval with digital signature
       const success = await approveCAPA(
         capa.id, 
-        currentUser, 
+        currentUser,
         signatureDialog.action,
         reason
       );

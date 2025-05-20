@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -281,7 +280,7 @@ const ComplaintList: React.FC = () => {
                   <TableRow key={complaint.id} onClick={() => navigate(`/complaints/${complaint.id}`)} className="cursor-pointer hover:bg-gray-50">
                     <TableCell className="font-medium">{complaint.reference_number}</TableCell>
                     <TableCell>{complaint.title}</TableCell>
-                    <TableCell>{complaint.product?.name || '-'}</TableCell>
+                    <TableCell>{complaint.product_name || '-'}</TableCell>
                     <TableCell>{complaint.source}</TableCell>
                     <TableCell>
                       <Badge className={`${getSeverityColor(complaint.severity)}`}>
