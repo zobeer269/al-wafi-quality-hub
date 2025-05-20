@@ -63,7 +63,7 @@ const ProductDetailPage: React.FC = () => {
           {error}
         </div>
       ) : product ? (
-        <ProductDetail />
+        <ProductDetail product={product} />
       ) : null}
     </DashboardLayout>
   );

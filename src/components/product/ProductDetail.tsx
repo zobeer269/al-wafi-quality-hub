@@ -28,10 +28,10 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import { Product } from '@/types/product';
 import {
-  getProductById,
+  fetchProductById,
   updateProduct,
   createProductVersion,
-  getProductVersionById,
+  getProductVersions,
   updateProductVersion,
   deleteProductVersion,
 } from '@/services/productService';
@@ -294,7 +294,6 @@ const ProductVersionForm: React.FC<ProductVersionFormProps> = ({ productId, onSu
               <FormMessage />
             </FormItem>
           )}
-
         />
 
         <FormField
@@ -337,7 +336,10 @@ const EditVersionModal: React.FC<{
           description: "Product version updated successfully",
         });
       } else {
-        await createProductVersion(productId, data);
+        await createProductVersion({
+          product_id: productId,
+          ...data
+        });
         toast({
           title: "Success",
           description: "Product version created successfully",
@@ -372,53 +374,44 @@ const EditVersionModal: React.FC<{
   );
 };
 
-const ProductDetail: React.FC = () => {
+interface ProductDetailProps {
+  product: Product;
+}
+
+const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialProduct }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState<Product>(initialProduct);
+  const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState(initialProduct.name);
+  const [description, setDescription] = useState(initialProduct.description);
   const [versions, setVersions] = useState<ProductVersion[]>([]);
   const [isAddingVersion, setIsAddingVersion] = useState(false);
   const [versionToDelete, setVersionToDelete] = useState<string | null>(null);
   const [versionToEdit, setVersionToEdit] = useState<ProductVersion | null>(null);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const loadVersions = async () => {
       if (!id) return;
       setLoading(true);
       try {
-        const productData = await getProductById(id);
-        if (productData) {
-          setProduct(productData);
-          setName(productData.name);
-          setDescription(productData.description);
-          setVersions(productData.versions || []);
-        } else {
-          toast({
-            title: "Error",
-            description: "Product not found",
-            variant: "destructive",
-          });
-          navigate('/products');
-        }
+        const versionsData = await getProductVersions(id);
+        setVersions(versionsData);
       } catch (error) {
-        console.error("Failed to fetch product:", error);
+        console.error("Failed to fetch product versions:", error);
         toast({
           title: "Error",
-          description: "Failed to load product details",
+          description: "Failed to load product versions",
           variant: "destructive",
         });
-        navigate('/products');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProduct();
-  }, [id, navigate]);
+    loadVersions();
+  }, [id]);
 
   const handleEditClick = () => {
     setIsEditMode(true);
@@ -426,8 +419,8 @@ const ProductDetail: React.FC = () => {
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    setName(product?.name || '');
-    setDescription(product?.description || '');
+    setName(product.name);
+    setDescription(product.description);
   };
 
   const handleSaveClick = async () => {
@@ -435,7 +428,7 @@ const ProductDetail: React.FC = () => {
 
     try {
       await updateProduct(id, { name, description });
-      setProduct({ ...product!, name, description });
+      setProduct({ ...product, name, description });
       setIsEditMode(false);
       toast({
         title: "Success",
@@ -463,10 +456,8 @@ const ProductDetail: React.FC = () => {
   const handleVersionAdded = async () => {
     if (!id) return;
     try {
-      const productData = await getProductById(id);
-      if (productData) {
-        setVersions(productData.versions || []);
-      }
+      const versionsData = await getProductVersions(id);
+      setVersions(versionsData);
     } catch (error) {
       console.error("Failed to reload product versions:", error);
       toast({
@@ -479,7 +470,8 @@ const ProductDetail: React.FC = () => {
 
   const handleEditVersion = async (versionId: string) => {
     try {
-      const versionData = await getProductVersionById(versionId);
+      // Find the version in the current versions array
+      const versionData = versions.find(v => v.id === versionId);
       if (versionData) {
         setVersionToEdit(versionData);
         setIsAddingVersion(true);
@@ -559,12 +551,7 @@ const ProductDetail: React.FC = () => {
   }
 
   return (
-    <DashboardLayout>
-      <PageHeader
-        title="Product Details"
-        description="View and manage product details"
-      />
-
+    <>
       <Card>
         <CardHeader>
           <CardTitle>
@@ -593,7 +580,7 @@ const ProductDetail: React.FC = () => {
         <CardContent className="flex justify-end">
           {isEditMode ? (
             <>
-              <Button variant="secondary" onClick={handleCancelEdit}>
+              <Button variant="secondary" onClick={handleCancelEdit} className="mr-2">
                 Cancel
               </Button>
               <Button onClick={handleSaveClick}>
@@ -610,8 +597,8 @@ const ProductDetail: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex justify-between items-center">
+      <Card className="mt-6">
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Product Versions</CardTitle>
           <Button size="sm" onClick={handleAddVersionClick}>
             <Plus className="mr-2 h-4 w-4" />
@@ -619,7 +606,13 @@ const ProductDetail: React.FC = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          {versions.length > 0 ? (
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+          ) : versions.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {versions.map((version) => (
                 <Card key={version.id}>
@@ -627,7 +620,11 @@ const ProductDetail: React.FC = () => {
                     <CardTitle>{version.version}</CardTitle>
                     <CardDescription>{version.description}</CardDescription>
                   </CardHeader>
-                  <CardContent className="flex justify-end">
+                  <CardContent>
+                    {version.status && <p className="text-sm">Status: {version.status}</p>}
+                    {version.release_date && <p className="text-sm">Release: {new Date(version.release_date).toLocaleDateString()}</p>}
+                  </CardContent>
+                  <CardContent className="flex justify-end gap-2">
                     <Button variant="outline" size="icon" onClick={() => handleEditVersion(version.id)}>
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -654,7 +651,7 @@ const ProductDetail: React.FC = () => {
               </DialogDescription>
             </DialogHeader>
             <EditVersionModal
-              productId={id}
+              productId={id || ''}
               onClose={handleCloseVersionModal}
               initialData={versionToEdit || {
                 id: "",
@@ -691,7 +688,7 @@ const ProductDetail: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </>
   );
 };
 
