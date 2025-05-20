@@ -61,6 +61,7 @@ export const getCAPAs = async (): Promise<CAPA[]> => {
   }
 };
 
+
 // Fetch CAPAs for dropdown selection
 export const fetchCAPAs = async () => {
   try {

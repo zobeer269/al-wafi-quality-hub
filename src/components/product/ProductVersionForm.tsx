@@ -38,17 +38,16 @@ type ProductVersionFormValues = z.infer<typeof formSchema>;
 
 
 interface ProductVersionFormProps {
+  productId: string;
   onSubmit: (values: Partial<ProductVersion>) => void;
   onCancel: () => void;
-  productId: string;
-  initialData?: Partial<ProductVersion>;
   isLoading?: boolean;
-
-  // أضف هذه إذا فعلاً تستخدمها في المكان الذي تستدعي فيه النموذج
-  onClose?: () => void;
-  onSuccess?: () => Promise<void>;
+  initialData?: Partial<ProductVersion>;
+  onClose?: () => void; // لحل خطأ props
   isEditing?: boolean;
+  onSuccess?: () => Promise<void>; // لحل خطأ onSuccess
 }
+
 
 
 const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
