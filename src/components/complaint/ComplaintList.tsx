@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -48,7 +49,7 @@ const ComplaintList: React.FC = () => {
   const loadComplaints = async () => {
     setLoading(true);
     const data = await fetchComplaints(filters);
-    setComplaints(data);
+    setComplaints(data as Complaint[]);
     setLoading(false);
   };
 

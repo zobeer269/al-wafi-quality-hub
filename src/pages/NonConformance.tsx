@@ -102,7 +102,7 @@ const NonConformancePage = () => {
     navigate('/nonconformance/create');
   };
 
-  const handleSelectNC = (nc: NonConformance) => {
+  const handleViewNC = (nc: NonConformance) => {
     navigate(`/nonconformance/${nc.id}`);
   };
 
@@ -161,7 +161,7 @@ const NonConformancePage = () => {
               <NCList 
                 nonConformances={nonConformances}
                 loading={loading}
-                onSelectNC={handleSelectNC}
+                onViewNC={handleViewNC}
               />
             </CardContent>
           </Card>

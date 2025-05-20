@@ -31,7 +31,7 @@ const ComplaintDetailPage = () => {
         setLoading(true);
         const data = await fetchComplaintById(id);
         if (data) {
-          setComplaint(data);
+          setComplaint(data as Complaint);
         } else {
           setError("Complaint not found");
         }

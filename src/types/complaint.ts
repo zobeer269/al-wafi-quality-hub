@@ -12,11 +12,12 @@ export interface Complaint {
   reference_number: string;
   title: string;
   description: string;
-  source: "Customer" | "Internal" | "Distributor" | "Inspector";
+  source: ComplaintSource;
   product_id?: string | null;
+  product_name?: string; // Added to match what's used in the components
   batch_number?: string | null;
-  severity: "Low" | "Medium" | "High" | "Critical";
-  status: "Open" | "Under Investigation" | "Resolved" | "Closed";
+  severity: ComplaintSeverity;
+  status: ComplaintStatus;
   linked_nc_id?: string | null;
   linked_capa_id?: string | null;
   assigned_to?: string | null;
@@ -28,8 +29,8 @@ export interface Complaint {
   justification?: string | null;
   created_at: string;
   updated_at: string;
+  tags?: string[];
 }
-
 
 export interface ComplaintFilters {
   status?: ComplaintStatus;
@@ -65,5 +66,7 @@ export interface NonConformance {
   updated_at: string;
   closed_date?: string | null;
   closed_by?: string | null;
+  root_cause?: string | null;
+  lot_number?: string | null;
+  product_affected?: string | null;
 }
-

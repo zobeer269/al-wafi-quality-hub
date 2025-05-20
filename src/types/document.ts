@@ -1,4 +1,3 @@
-
 export type DocumentStatus = "Draft" | "In Review" | "Approved" | "Obsolete";
 export type CAPAStatus = "Open" | "Investigation" | "In Progress" | "Closed";
 export type CAPAType = "Corrective" | "Preventive" | "Both";
@@ -57,30 +56,8 @@ export interface CAPA {
   capa_type?: CAPAType; // optional alias if needed for service compatibility
 }
 
-export interface Complaint {
-  id: string;
-  reference_number: string;
-  title: string;
-  description: string;
-  source: string;
-  severity: "Low" | "Medium" | "High" | "Critical";
-  status: "Open" | "Under Investigation" | "Resolved" | "Closed";
-  reported_by: string;
-  reported_at: string;
-  assigned_to?: string | null;
-  batch_number?: string | null;
-  product_id?: string | null; 
-  product_name?: string; // Adding this field for display purposes
-  linked_nc_id?: string | null;
-  linked_capa_id?: string | null;
-  justification?: string | null;
-  resolution_notes?: string | null;
-  closed_at?: string | null;
-  closed_by?: string | null;
-  created_at: string;
-  updated_at: string;
-  tags?: string[];
-}
+// Use the imported Complaint from complaint.ts instead
+// This is to prevent type conflicts
 
 export interface Signature {
   id: string;

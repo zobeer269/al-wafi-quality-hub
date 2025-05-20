@@ -1,6 +1,34 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { Complaint } from "@/types/document";
+import { Complaint, ComplaintStatus, ComplaintSource, ComplaintSeverity } from "@/types/complaint";
 import { toast } from "@/hooks/use-toast";
+
+// Helper function to convert database record to Complaint type
+const toComplaint = (data: any): Complaint => {
+  return {
+    id: data.id,
+    reference_number: data.reference_number,
+    title: data.title,
+    description: data.description,
+    source: data.source as ComplaintSource,
+    severity: data.severity as ComplaintSeverity,
+    status: data.status as ComplaintStatus,
+    product_id: data.product_id,
+    product_name: data.products?.name || 'Unknown product',
+    batch_number: data.batch_number,
+    linked_nc_id: data.linked_nc_id,
+    linked_capa_id: data.linked_capa_id,
+    assigned_to: data.assigned_to,
+    reported_by: data.reported_by,
+    reported_at: data.reported_at,
+    closed_at: data.closed_at,
+    closed_by: data.closed_by,
+    resolution_notes: data.resolution_notes,
+    justification: data.justification,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
+};
 
 // Mock data for development - replace with actual implementation
 export const fetchComplaints = async (filters: any = {}) => {
@@ -22,29 +50,7 @@ export const fetchComplaints = async (filters: any = {}) => {
     }
     
     // Process data to match our Complaint interface
-    return data.map(item => ({
-      id: item.id,
-      reference_number: item.reference_number,
-      title: item.title,
-      description: item.description,
-      source: item.source,
-      severity: item.severity,
-      status: item.status,
-      product_id: item.product_id,
-      product_name: item.products?.name || 'Unknown product',
-      batch_number: item.batch_number,
-      linked_nc_id: item.linked_nc_id,
-      linked_capa_id: item.linked_capa_id,
-      assigned_to: item.assigned_to,
-      reported_by: item.reported_by,
-      reported_at: item.reported_at,
-      closed_at: item.closed_at,
-      closed_by: item.closed_by,
-      resolution_notes: item.resolution_notes,
-      justification: item.justification,
-      created_at: item.created_at,
-      updated_at: item.updated_at
-    }));
+    return data.map((item: any) => toComplaint(item));
   } catch (error) {
     console.error('Error in fetchComplaints:', error);
     return [];
@@ -64,29 +70,7 @@ export const fetchComplaintById = async (id: string) => {
       return null;
     }
     
-    return {
-      id: data.id,
-      reference_number: data.reference_number,
-      title: data.title,
-      description: data.description,
-      source: data.source,
-      severity: data.severity,
-      status: data.status,
-      product_id: data.product_id,
-      product_name: data.products?.name || 'Unknown product',
-      batch_number: data.batch_number,
-      linked_nc_id: data.linked_nc_id,
-      linked_capa_id: data.linked_capa_id,
-      assigned_to: data.assigned_to,
-      reported_by: data.reported_by,
-      reported_at: data.reported_at,
-      closed_at: data.closed_at,
-      closed_by: data.closed_by,
-      resolution_notes: data.resolution_notes,
-      justification: data.justification,
-      created_at: data.created_at,
-      updated_at: data.updated_at
-    } as Complaint;
+    return toComplaint(data);
   } catch (error) {
     console.error('Error in fetchComplaintById:', error);
     return null;
