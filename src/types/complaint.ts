@@ -12,25 +12,23 @@ export interface Complaint {
   reference_number: string;
   title: string;
   description: string;
-  source: ComplaintSource;
-  product_id?: string | null;
-  product_name?: string; // Added to match what's used in the components
-  batch_number?: string | null;
-  severity: ComplaintSeverity;
-  status: ComplaintStatus;
-  linked_nc_id?: string | null;
-  linked_capa_id?: string | null;
-  assigned_to?: string | null;
+  source: "Customer" | "Internal" | "Distributor" | "Inspector";
+  product_id?: string;
+  batch_number?: string;
+  severity: "Low" | "Medium" | "High" | "Critical";
+  status: "Open" | "Under Investigation" | "Resolved" | "Closed";
+  linked_nc_id?: string;
+  linked_capa_id?: string;
+  assigned_to?: string;
   reported_by: string;
   reported_at: string;
-  closed_at?: string | null;
-  closed_by?: string | null;
-  resolution_notes?: string | null;
-  justification?: string | null;
+  closed_at?: string;
+  closed_by?: string;
+  resolution_notes?: string;
+  justification?: string;
   created_at: string;
-  updated_at: string;
-  tags?: string[];
 }
+
 
 export interface ComplaintFilters {
   status?: ComplaintStatus;

@@ -33,28 +33,21 @@ export interface CAPA {
   number: string;
   title: string;
   description: string;
-  type: CAPAType; // matches capa_type in DB
-  priority: CAPAPriority;
-  status: CAPAStatus;
-  createdDate: string; // created_at
-  dueDate?: string | null;
-  assignedTo?: string | null;
+  capa_type: "Corrective" | "Preventive" | "Both";
+  status: "Open" | "Investigation" | "In Progress" | "Closed";
+  priority: number; // أو CAPAPriority إذا كان لديك enum
   root_cause?: string | null;
   action_plan?: string | null;
+  assigned_to?: string | null;
   created_by: string;
+  created_at: string;
+  updated_at?: string;
+  due_date?: string | null;
   closed_date?: string | null;
   effectiveness_check_required?: boolean;
   effectiveness_verified?: boolean;
-  linked_nc_id?: string | null;
-  linkedAuditFindingId?: string | null;
-  approval_status?: ApprovalStatus;
-  approved_by?: string | null;
-  approved_at?: string | null;
-  tags?: string[];
-  ai_notes?: string | null;
-  updated_at?: string;
-  capa_type?: CAPAType; // optional alias if needed for service compatibility
 }
+
 
 // Use the imported Complaint from complaint.ts instead
 // This is to prevent type conflicts
