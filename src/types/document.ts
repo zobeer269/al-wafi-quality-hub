@@ -55,6 +55,8 @@ export interface CAPA {
   ai_notes?: string | null;
   updated_at?: string;
   capa_type?: CAPAType; // optional alias if needed for service compatibility
+  linkedAuditFindingId?: string | null; // Supabase: linked_audit_finding_id
+
 }
 
 export interface NonConformance {
@@ -95,4 +97,15 @@ export interface Signature {
   signed_at: string;
   reason?: string;
   ip_address?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  job_title?: string | null;
+  department?: string | null;
+  avatar_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }

@@ -36,13 +36,20 @@ const formSchema = z.object({
 
 type ProductVersionFormValues = z.infer<typeof formSchema>;
 
+
 interface ProductVersionFormProps {
   onSubmit: (values: Partial<ProductVersion>) => void;
   onCancel: () => void;
   productId: string;
   initialData?: Partial<ProductVersion>;
   isLoading?: boolean;
+
+  // أضف هذه إذا فعلاً تستخدمها في المكان الذي تستدعي فيه النموذج
+  onClose?: () => void;
+  onSuccess?: () => Promise<void>;
+  isEditing?: boolean;
 }
+
 
 const ProductVersionForm: React.FC<ProductVersionFormProps> = ({
   onSubmit,

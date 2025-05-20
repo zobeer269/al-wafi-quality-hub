@@ -208,3 +208,36 @@ export const fetchCAPAById = async (id: string) => {
     return null;
   }
 };
+
+export const approveCAPA = async (id: string, userId: string) => {
+  return await supabase
+    .from('capas')
+    .update({
+      approval_status: "Approved",
+      approved_by: userId,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', id);
+};
+
+export const userCanApprove = async () => {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", (await supabase.auth.getUser()).data.user?.id);
+
+  if (error) return false;
+  return data.some((r) => r.role === "admin" || r.role === "qa");
+};
+
+export const getUserName = async (userId: string): Promise<string> => {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("first_name, last_name")
+    .eq("id", userId)
+    .single();
+
+  if (error || !data) return "Unknown";
+  return `${data.first_name} ${data.last_name}`;
+};
+
